@@ -23,7 +23,7 @@ pip install python-fasthtml
 
 ### Project Details
 
-**You are free to use any kind og GPT/LLM to finish this project**
+**You are free to use any kind of GPT/LLM to finish this project**
 
 The first two are warm up exercises
 
@@ -33,11 +33,10 @@ The first two are warm up exercises
 The remaining two are the expected deliverables
 
 * Workflow for New Book Request for institute library. Check the folder `book` for more details.
-
 * Mechanism to update alumni details using linkedin API. Check the folder `alumni-linkedin` for more details.
 
 ### Who do I talk to? 
 
 * Dinesh 
-* Alumni relations offices - Ms. Nibedita
+* Alumni relations officer - Ms. Nibedita
 * Librarian - Mr. Sreejith

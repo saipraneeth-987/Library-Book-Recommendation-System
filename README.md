@@ -35,6 +35,16 @@ The remaining two are the expected deliverables
 * Workflow for New Book Request for institute library. Check the folder `book` for more details.
 * Mechanism to update alumni details using linkedin API. Check the folder `alumni-linkedin` for more details.
 
+### Login details for pythonanywhere
+
+If you would like to see how your web application runs on in a webpage, you can use an online service due to pythonanywhere which supports fasthtml
+
+- Website: https://pythonanywhere.com
+- Login username kdinesh24
+- Login password december-internship-42
+
+
+
 ### Who do I talk to? 
 
 * Dinesh 

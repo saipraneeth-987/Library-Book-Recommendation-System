@@ -1,29 +1,43 @@
 # README #
 
-This README would normally document whatever steps are necessary to get your application up and running.
+This readme describes the contents of the repository and their purpose.
 
 ### What is this repository for? ###
 
-* Quick summary
-* Version
-* [Learn Markdown](https://bitbucket.org/tutorials/markdowndemo)
+* Internship work of Pragya and Sai Praneeth
+* Version 0.0
 
 ### How do I get set up? ###
 
-* Summary of set up
-* Configuration
-* Dependencies
-* Database configuration
-* How to run tests
-* Deployment instructions
+All these projects use fasthtml.
 
-### Contribution guidelines ###
+* A quick [summary](https://about.fastht.ml/) of fasthtml
+* A good example app using fasthtml, see [here](https://docs.fastht.ml/tutorials/by_example.html)
 
-* Writing tests
-* Code review
-* Other guidelines
+* For installation of fasthtml, just run
 
-### Who do I talk to? ###
+``` bash
+pip install python-fasthtml
+```
 
-* Repo owner or admin
-* Other community or team contact
+
+### Project Details
+
+**You are free to use any kind og GPT/LLM to finish this project**
+
+The first two are warm up exercises
+
+* A simple Todo app - check the folder `todo` for details
+* A CRUD app. CRUD stands for Create, Read, Update and Delete - Check the folder `crud` for details.
+
+The remaining two are the expected deliverables
+
+* Workflow for New Book Request for institute library. Check the folder `book` for more details.
+
+* Mechanism to update alumni details using linkedin API. Check the folder `alumni-linkedin` for more details.
+
+### Who do I talk to? 
+
+* Dinesh 
+* Alumni relations offices - Ms. Nibedita
+* Librarian - Mr. Sreejith

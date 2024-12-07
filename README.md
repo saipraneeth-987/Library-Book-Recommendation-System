@@ -20,6 +20,8 @@ All these projects use fasthtml.
 pip install python-fasthtml
 ```
 
+To understand what goes behind in the html side and how things actually work,
+you may want to read about [htmx](https://htmx.org/)
 
 ### Project Details
 
@@ -43,7 +45,7 @@ If you would like to see how your web application runs on in a webpage, you can 
 - Login username kdinesh24
 - Login password december-internship-42
 
-
+They support [WSGI](https://wsgi.readthedocs.io/en/latest/index.html) applications. FastHTML uses WSGI.
 
 ### Who do I talk to? 
 

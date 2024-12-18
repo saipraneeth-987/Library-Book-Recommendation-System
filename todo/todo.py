@@ -65,9 +65,9 @@ def home():
         H3("Done"),  # Title for the done Todos list
         done_todos,  # Display done Todos list
         header = Div(
-            A("Download CSV", href="/download", role="button", style="margin-left: 10px;"),  # Add download button
-            A("Backup", href="/backup", role="button", style="margin-left: 10px;"),  # Add backup button
-            
+            A("Download CSV", href="/download", role="button", style="margin-left: 10px;"),
+            A("Backup", href="/backup", role="button", style="margin-left: 10px;"),   
+            A("Restore", href="/restore", role="button", style="margin-left: 10px;"),
             style="display: flex; gap: 10px;"  # Flexbox for layout
         ),
         footer=Div(id='current-todo')
@@ -94,7 +94,7 @@ def update_todo(todo: Todo):
 @app.get("/remove")
 def remove_todo(id: int):
     todos.delete(id)
-    return home()
+    return RedirectResponse(url="/")
 
 # Route to handle editing a Todo
 @app.get("/edit/{id}")
@@ -185,7 +185,7 @@ def backup():
 atexit.register(backup)
 
 # Function to periodically back up data to ensure persistence
-def periodic_backup(interval=60):
+def periodic_backup(interval=360):
     while True:
         time.sleep(interval)  # Wait for the specified interval
         backup()  
@@ -201,5 +201,37 @@ backup_thread.start()
 def backup_csv():
     backup() 
     return FileResponse('./backups/backup_todos.csv', media_type="text/csv")
+
+@app.get("/restore")
+def restore_data():
+    filepath = "backups/backup_todos.csv"
+    if not os.path.exists(filepath):
+        return RedirectResponse("/", status_code=302)
+
+    # Connect to the SQLite database
+    connection = sqlite3.connect('data/todos.db')
+    cursor = connection.cursor()
+
+    # Drop and recreate the table
+    cursor.execute("DROP TABLE IF EXISTS items")
+    cursor.execute("""
+    CREATE TABLE items (
+        id INTEGER PRIMARY KEY,
+        title TEXT NOT NULL,
+        description TEXT,
+        done BOOLEAN 
+    )
+    """)
+
+    # Open and read the backup CSV file
+    with open(filepath, "r") as file:
+        contents = csv.reader(file)
+        next(contents, None)  # Skip the header row
+        insert_records = "INSERT INTO items (id, title, description, done) VALUES(?, ?, ?, ?)"
+        cursor.executemany(insert_records, contents)
+
+    connection.commit()
+    connection.close()
+    return RedirectResponse("/", status_code=302)
 
 serve()

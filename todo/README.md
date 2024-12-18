@@ -4,4 +4,4 @@ Required packages
 -pip install python-fasthtml
 -pip install fastapi
 
-[Homepage](images/Home.png)
+![Homepage](images/Home.png)

@@ -65,13 +65,19 @@ To help the librarian, we need to build a chhootu webpage that can help track al
         
 * Stage 4: Placing purchase order
     - Librarian then obtain quotes from online/offline vendors and places the purchase order
+    - Desirable information to be maintained and displayed in this stage are
+        * To be written
 
 * Stage 5: Book acquisition 
     - The book has arrivied in the library. The books bundle needs to be opened
     and proper cataloging needs to be done.
+    - Desirable information to be maintained and displayed in this stage are
+        * To be written
 
 * Stage 6: Book in circulation
     - Once stage 4 is over, the book is ready for circulation.
+    - Desirable information to be maintained and displayed in this stage are
+        * To be written
 
 ## Implementation ##
 You can assume that the list of new books is given as a CSV file (sample

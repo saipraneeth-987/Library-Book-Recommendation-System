@@ -1,5 +1,12 @@
 from fasthtml.common import *
-
+import csv
+from io import StringIO
+import csv
+import sqlite3
+import os
+import atexit
+import time
+from fastapi.responses import FileResponse
 # Initialize the app, routes, and the Todo model with the database
 app, rt,todos, Todo = fast_app('data/todos.db', id=int, title=str, description=str, done=bool, pk='id')
 
@@ -52,11 +59,17 @@ def home():
 
     # Card for displaying the two lists and the "Add Todo" form
     card = Card(
+        add,
         H3("Todos"),  # Title for the active Todos list
         active_todos,  # Display active Todos list
         H3("Done"),  # Title for the done Todos list
         done_todos,  # Display done Todos list
-        header=add,
+        header = Div(
+            A("Download CSV", href="/download", role="button", style="margin-left: 10px;"),  # Add download button
+            A("Backup", href="/backup", role="button", style="margin-left: 10px;"),  # Add backup button
+            
+            style="display: flex; gap: 10px;"  # Flexbox for layout
+        ),
         footer=Div(id='current-todo')
     )
 
@@ -67,6 +80,8 @@ def home():
 @app.post("/")
 def add_todo(todo: Todo):
     todos.insert(todo)
+    if todo.done is None:
+        todo.done = False
     return home()
 
 # Route to handle updating a Todo
@@ -118,5 +133,73 @@ def edit_todo_done(id: int):
     frm = fill_form(res, todos[id])
     return Titled('Edit Tododone', frm)
 
-# Start the server to handle requests
+@app.get("/download")
+def download_csv():
+    # Create an in-memory string buffer
+    csv_file = StringIO()
+    writer = csv.writer(csv_file)
+    writer.writerow(["ID", "Title", "Description", "Done"])
+    for todo in todos():
+        done_status = 1 if todo.done else 0
+        writer.writerow([todo.id, todo.title,todo.description, done_status])
+
+    # Reset the cursor to the beginning of the buffer
+    csv_file.seek(0)
+
+    return StreamingResponse(
+        csv_file,
+        media_type="text/csv",
+        headers={"Content-Disposition": "attachment; filename=todos.csv"}
+    )
+
+def backup(): 
+    backup_directory = os.path.join("backups")
+    
+    if not os.path.exists(backup_directory):
+        os.makedirs(backup_directory)
+
+    backup_file_path = os.path.join(backup_directory, 'backup_todos.csv')
+    tmp_backup_file_path = backup_file_path + '.tmp'  
+
+    csv_file = StringIO()
+    writer = csv.writer(csv_file)
+    writer.writerow(["ID", "Title", "Done"])
+
+    for todo in todos():
+        done_status = 1 if todo.done else 0
+        writer.writerow([todo.id, todo.title, done_status])
+
+    with open(tmp_backup_file_path, "w") as tmp_file:
+        tmp_file.write(csv_file.getvalue())
+        tmp_file.flush() 
+
+    if os.path.exists(backup_file_path):
+        os.remove(backup_file_path)
+
+    # Rename the temporary file to the actual backup file (atomic operation)
+    os.rename(tmp_backup_file_path, backup_file_path)
+
+    print(f"Backup saved to {backup_file_path}")
+
+# Register the backup function to run when the server shuts down
+atexit.register(backup)
+
+# Function to periodically back up data to ensure persistence
+def periodic_backup(interval=60):
+    while True:
+        time.sleep(interval)  # Wait for the specified interval
+        backup()  
+
+# Start periodic backup in a separate thread
+import threading
+backup_thread = threading.Thread(target=periodic_backup)
+backup_thread.daemon = True  # Ensure the thread stops when the server stops
+backup_thread.start()
+
+# Route to handle backup manually 
+@app.get("/backup")
+def backup_csv():
+    backup() 
+    return FileResponse('./backups/backup_todos.csv', media_type="text/csv")
+
 serve()

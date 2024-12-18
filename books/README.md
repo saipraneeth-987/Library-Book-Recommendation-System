@@ -61,6 +61,7 @@ To help the librarian, we need to build a chhootu webpage that can help track al
         * Cost in INR (editable, number)
         * Date on which stage 2 is completed (non editable, autocalculated based on when stage 1 is completed)
         * Status of approval from Dean academics (editable, Boolean: approved/not approved)
+        * Remarks (editable, specifc for stage 3 (don't copy from stage 2))
         
 * Stage 4: Placing purchase order
     - Librarian then obtain quotes from online/offline vendors and places the purchase order

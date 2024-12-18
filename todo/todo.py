@@ -163,11 +163,11 @@ def backup():
 
     csv_file = StringIO()
     writer = csv.writer(csv_file)
-    writer.writerow(["ID", "Title", "Done"])
+    writer.writerow(["ID", "Title","Description", "Done"])
 
     for todo in todos():
         done_status = 1 if todo.done else 0
-        writer.writerow([todo.id, todo.title, done_status])
+        writer.writerow([todo.id, todo.title,todo.description, done_status])
 
     with open(tmp_backup_file_path, "w") as tmp_file:
         tmp_file.write(csv_file.getvalue())

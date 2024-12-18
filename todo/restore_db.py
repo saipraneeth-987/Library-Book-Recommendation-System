@@ -8,9 +8,9 @@ filepath = "data/todos.csv"
 connection = sqlite3.connect('data/todo.db')
 cursor = connection.cursor()
 
-# Create the 'todos' table if it doesn't exist
+cursor.execute("""drop table if exists items""")
 cursor.execute("""
-CREATE TABLE IF NOT EXISTS items (
+CREATE TABLE items (
     id INTEGER PRIMARY KEY,
     title TEXT NOT NULL,
     description text,

@@ -3,8 +3,8 @@ import sys
 import sqlite3
 
 # Connect to the SQLite database
-#filepath = sys.argv[1]
-filepath = "data/todos.csv"
+filepath = sys.argv[1]
+#filepath = "data/todos.csv"
 connection = sqlite3.connect('data/todo.db')
 cursor = connection.cursor()
 

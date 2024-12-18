@@ -5,10 +5,10 @@ through google sheets.
 
 The context for this project is the following: 
 - we have a [book recommendation system](https://docs.google.com/forms/d/e/1FAIpQLSfgUek_iRK71V2WYsErVSfoAb-YQu5_HjTvTyRntAKNjClh9Q/viewform?usp=sf_link) in the institute.
-- there are several stages of the book acquisition which the librarian has to
-manually maintain in huge spreadsheets.
-- this is creating difficulty as the volume of all new purchase data that the
-library is getting high. This is only going to grow as the institute grows.
+
+- there are several stages of the book acquisition which the librarian has to manually maintain in huge spreadsheets.
+
+- this is creating difficulty as the volume of all new purchase data that the library is getting high. This is only going to grow as the institute grows.
 
 To help the librarian, we need to build a chhootu webpage that can help track all the requests and their stages.
 

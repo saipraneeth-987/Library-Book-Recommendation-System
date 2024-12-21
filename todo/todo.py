@@ -51,6 +51,14 @@ def home():
         ),
         action="/", method='post'
     )
+    restore_form = Form(
+        Group(
+            Input(type="file", name="backup_file", accept=".csv", required=True, style="margin-right: 10px;"),
+            Button("Restore", type="submit"),
+            style="display: flex; align-items: center;"
+        ),
+        action="/restore", method="post", enctype="multipart/form-data"
+    )
     # Create a list of active Todos (not done)
     active_todos = Ul(*map(TodoRow, filter(is_active, todos())), id='active-todo-list')
 
@@ -67,7 +75,8 @@ def home():
         header = Div(
             A("Download CSV", href="/download", role="button", style="margin-left: 10px;"),
             A("Backup", href="/backup", role="button", style="margin-left: 10px;"),   
-            A("Restore", href="/restore", role="button", style="margin-left: 10px;"),
+            #A("Restore", href="/restore", role="button", style="margin-left: 11px;"),
+            restore_form,
             style="display: flex; gap: 10px;"  # Flexbox for layout
         ),
         footer=Div(id='current-todo')
@@ -202,16 +211,13 @@ def backup_csv():
     backup() 
     return FileResponse('./backups/backup_todos.csv', media_type="text/csv")
 
-@app.get("/restore")
-def restore_data():
-    filepath = "backups/backup_todos.csv"
-    if not os.path.exists(filepath):
-        return RedirectResponse("/", status_code=302)
-
+@app.post("/restore")
+async def restore_data(backup_file: UploadFile):
+    contents = await backup_file.read()
+    print(contents)
     # Connect to the SQLite database
     connection = sqlite3.connect('data/todos.db')
     cursor = connection.cursor()
-
     # Drop and recreate the table
     cursor.execute("DROP TABLE IF EXISTS items")
     cursor.execute("""
@@ -223,15 +229,14 @@ def restore_data():
     )
     """)
 
-    # Open and read the backup CSV file
-    with open(filepath, "r") as file:
-        contents = csv.reader(file)
-        next(contents, None)  # Skip the header row
-        insert_records = "INSERT INTO items (id, title, description, done) VALUES(?, ?, ?, ?)"
-        cursor.executemany(insert_records, contents)
+    csv_reader = csv.reader(contents.decode("utf-8").splitlines())
+    next(csv_reader, None)  # Skip the header row
+    insert_records = "INSERT INTO items (id, title, description, done) VALUES(?, ?, ?, ?)"
+    cursor.executemany(insert_records,csv_reader)
 
     connection.commit()
     connection.close()
+        
     return RedirectResponse("/", status_code=302)
 
 serve()

@@ -70,6 +70,14 @@ def home():
         style="border-collapse: collapse; width: 100%;",
         **{"border": "1"}  # Add border to the table
     )
+    restore_form = Form(
+        Group(
+            Input(type="file", name="backup_file", accept=".csv", required=True, style="margin-right: 10px;"),
+            Button("Restore", type="submit"),
+            style="display: flex; align-items: center;"
+        ),
+        action="/restorestage1", method="post", enctype="multipart/form-data"
+    )
 
     # Card for displaying the book list
     card = Card(
@@ -77,7 +85,8 @@ def home():
         table,  # Display the table
         header=Div(
             A("Download CSV", href="/downloadstage1", role="button", style="margin-left: 10px;"),  # Add download button
-            A("Restore", href="/restorestage1", role="button", style="margin-left: 10px;"),
+            #A("Restore", href="/restorestage1", role="button", style="margin-left: 10px;"),
+            restore_form,
             A("Stage2", href="/stage2", role="button", style="margin-left: 10px;"),
             A("Stage3", href="/stage3", role="button", style="margin-left: 10px;"),
             A("Stage4", href="/stage4", role="button", style="margin-left: 10px;"),
@@ -146,16 +155,12 @@ def download_csv():
     )
 
 
-@app.get("/restorestage1")
-def restore_data():
-    restore_directory = os.path.join("books")
-    
-    if not os.path.exists(restore_directory):
-        os.makedirs(restore_directory)
-    
-    filepath = "books/datastage1.csv"
-    if not os.path.exists(filepath):
-        return RedirectResponse("/", status_code=302)
+@app.post("/restorestage1")
+async def restore_data(backup_file: UploadFile):
+    contents = await backup_file.read()
+    contents = contents.decode("utf-8")  # Decode the uploaded file's content
+    csv_reader = csv.reader(contents.splitlines())
+    next(csv_reader, None)  # Skip the header row if it exists
 
     # Connect to the SQLite database
     connection = sqlite3.connect('data/library.db')
@@ -187,20 +192,18 @@ def restore_data():
     )
     """)
 
-    # Insert data into the table, ignoring extra columns
-    with open(filepath, "r", encoding="utf-8") as file:
-        contents = csv.reader(file)
-        next(contents, None)  # Skip the header row
-        
-        insert_records = """
-        INSERT OR IGNORE INTO items 
-        (isbn, recommender, email, number_of_copies, purpose, remarks, date,current_stage) 
-        VALUES (?, ?, ?, ?, ?, ?, ?,1)
-        """
+    # Prepare the insert query
+    insert_records = """
+    INSERT OR IGNORE INTO items 
+    (isbn, recommender, email, number_of_copies, purpose, remarks, date, current_stage) 
+    VALUES (?, ?, ?, ?, ?, ?, ?, 1)
+    """
 
-        # Process each row, only extracting the necessary columns
-        filtered_rows = []
-        for row in contents:
+    # Process each row in the CSV
+    filtered_rows = []
+    for row in csv_reader:
+        # Extract and validate necessary fields
+        
             isbn = row[3]  # Assuming ISBN is at the correct column index
 
             # Validate ISBN before proceeding
@@ -211,8 +214,9 @@ def restore_data():
             filtered_row = [isbn, row[18], row[1], row[5], row[4], row[6], row[0]]
             filtered_rows.append(filtered_row)
 
-        # Insert the filtered data into the database
-        cursor.executemany(insert_records, filtered_rows)
+
+    # Insert the filtered data into the database
+    cursor.executemany(insert_records, filtered_rows)
 
     # Commit changes and close the connection
     connection.commit()

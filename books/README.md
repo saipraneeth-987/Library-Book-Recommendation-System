@@ -20,12 +20,17 @@ To help the librarian, we need to build a chhootu webpage that can help track al
     - All the data (ISBN, number of copies, recommender) is collected and stored in a google sheet.
     - Desirable information to be maintained in this stage are
         * ISBN (non editable, number)
-        * Recommender (non editable, text)
         * Number of copies (non editable, text)
         * Purpose of recommendation (non editable, text)
         * Remarks (non editable, text)
         * Name of recommender (non editable, text)
-        * Date on which request is placed (non editable, text).
+        * Date on which request is placed (non editable, date).
+    - Desirable Features
+	* At the beginning of the page for stage 1, explain what the stage does (as a small description para).
+    	* Display this information as table with appropriate headers. 
+	* Make the data sortable by the date column. 
+	* For each item in the table, create a checkbox (As the first table entry)
+	* After the description of the page, add a button which upon clicking moves the entries whose checkbox are selected over to stage 2.
 
 * Stage 2: Processing and Invoice generation
     - The librarian takes the newly recommended books and finds the correct

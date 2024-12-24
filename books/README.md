@@ -60,6 +60,7 @@ To help the librarian, we need to build a chhootu webpage that can help track al
     - Pagination of data displayed. Display max 10 books.
     - (Ambitious) Once the Modified ISBN is entered, use public service API (have to find out) and fetch the book title name, authors and the publisher information.
     - Download of books specific to a given stage.
+    - Try and see if you can deploy the stages to `pythonanywhere.com`
     
 
 * Stage 3: Submitted for Approval from Dean Academics

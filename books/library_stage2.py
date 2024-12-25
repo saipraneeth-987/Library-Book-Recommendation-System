@@ -22,6 +22,7 @@ app, rt, BookRecommendations, BookRecommendation = fast_app(
     modified_isbn=str,
     book_name=int,
     publisher=str,
+    seller = str,
     authors=str,
     currency=str,
     cost_currency=int,
@@ -46,68 +47,122 @@ def update_stage(isbn: int, current_stage: int,new_stage: int):
         connection.commit()
 
 @app.get("/")
-def home():
-    # Fetch items from the database
-    items = fetch_items_for_stage1()
-    # Generate a table with borders and a clear format
+def home(page: int = 1, sort_by: str = "date", order: str = "desc"):
+    items_per_page = 10
+    all_items = fetch_items_for_stage1()
+
+    # Apply sorting only for 'date' and 'email' columns
+    if sort_by in ["date", "email"]:
+        reverse = order == "desc"
+        column_index = {"date": 6, "email": 2}[sort_by]
+        all_items.sort(key=lambda x: x[column_index], reverse=reverse)
+
+    total_items = len(all_items)
+    total_pages = (total_items + items_per_page - 1) // items_per_page
+
+    # Pagination logic
+    start_index = (page - 1) * items_per_page
+    end_index = start_index + items_per_page
+    current_page_items = all_items[start_index:end_index]
+
+    visible_pages = 5
+    half_visible = visible_pages // 2
+    start_page = max(1, page - half_visible)
+    end_page = min(total_pages, page + half_visible)
+    if page <= half_visible:
+        end_page = min(total_pages, visible_pages)
+    if page > total_pages - half_visible:
+        start_page = max(1, total_pages - visible_pages + 1)
+
+    pagination_controls = Div(
+        *(
+            [
+                A("«", href=f"/?page={page - 1}&sort_by={sort_by}&order={order}", style="margin-right: 10px;font-size: x-large;" + ("visibility: hidden;" if page == 1 else "visibility: visible;")),
+            ]
+            + [
+                A(
+                    str(i),
+                    href=f"/?page={i}&sort_by={sort_by}&order={order}",
+                    style="margin-right: 10px; text-decoration: none; font-size: x-large ; " +
+                    ("font-weight: bold;" if i == page else "font-weight: normal;")
+                )
+                for i in range(start_page, end_page + 1)
+            ]
+            + [
+                A("»", href=f"/?page={page + 1}&sort_by={sort_by}&order={order}", style="margin-left: 10px;font-size: x-large;" + ("visibility: hidden;" if page == total_pages else "visibility: visible;"))
+            ]
+        ),
+        style="margin-top: 10px; text-align: center;"
+    )
+
+    def get_sort_icon(column):
+        if sort_by == column:
+            return "▲" if order == "asc" else "▼"
+        return "⇅"
+
+    def create_sort_link(column):
+        # Set default order to "desc" if it's the first load (when order is not passed)
+        new_order = "asc" if sort_by == column and order == "desc" else "desc"
+        return A(get_sort_icon(column), href=f"/?page={page}&sort_by={column}&order={new_order}", style="text-decoration: none; font-size: small; margin-left: 5px;")
+
     table = Table(
         Tr(
-            Th("Date",style="minwidth :100px"),
-            Th("ISBN"),
-            Th("Recommender"),
-            Th("Email"),
-            Th("Number of Copies"),
-            Th("Purpose"),
-            Th("Remarks"),
-            Th("Action",style="width = 110px")
+            Th(Div("Date", create_sort_link("date"), style="""display: inline-flex; align-items: center; font-weight: 1000; text-align: center; justify-content: center;width: 100%; height: 100%;""")),
+            Th("ISBN", style="font-weight: 1000; text-align: center;"),
+            Th("Recommender", style="font-weight: 1000; text-align: center;"),
+            Th(Div("Email", create_sort_link("email"), style="""display: inline-flex; align-items: center; font-weight: 1000; text-align: center; justify-content: center;width: 100%; height: 100%;""")),
+            Th("Number of Copies", style="font-weight: 1000; text-align: center;"),
+            Th("Purpose", style="font-weight: 1000; text-align: center;"),
+            Th("Remarks", style="font-weight: 1000; text-align: center;"),
+            Th("Action", style=" font-weight: 1000;width: 110px; text-align: center;"),
         ),
         *[
             Tr(
-            Td(item[6], style="font-size: smaller; padding: 4px;"),
-            Td(item[0], style="font-size: smaller; padding: 4px;"),
-            Td(item[1], style="font-size: smaller; padding: 4px;"),
-            Td(item[2], style="font-size: smaller; padding: 4px;"),
-            Td(item[3], style="font-size: smaller; padding: 4px;"),
-            Td(item[4], style="font-size: smaller; padding: 4px;"),
-            Td(item[5], style="font-size: smaller; padding: 4px; maxwidth: 500px"),
-            Td(A("Move to Stage 2",href=f"/move_to_stage2_from_stage1/{item[0]}", style="display:block;font-size: smaller; padding: 4px; width: 110px")))
-            for item in items
+                Td(item[6], style="font-size: smaller; padding: 4px;"),
+                Td(item[0], style="font-size: smaller; padding: 4px;"),
+                Td(item[1], style="font-size: smaller; padding: 4px;"),
+                Td(item[2], style="font-size: smaller; padding: 4px;"),
+                Td(item[3], style="font-size: smaller; padding: 4px;"),
+                Td(item[4], style="font-size: smaller; padding: 4px;"),
+                Td(item[5], style="font-size: smaller; padding: 4px; maxwidth: 500px"),
+                Td(A("Move to Stage 2", href=f"/move_to_stage2_from_stage1/{item[0]}", style="display:block;font-size: smaller; padding: 4px; width: 110px"))
+            )
+            for item in current_page_items
         ],
         style="border-collapse: collapse; width: 100%;",
-        **{"border": "1"}  # Add border to the table
+        **{"border": "1"}
     )
     restore_form = Form(
         Group(
             Input(type="file", name="backup_file", accept=".csv", required=True, style="margin-right: 10px;"),
-            Button("Restore", type="submit"),
+            Button("Restore", type="submit", style="font-weight: 600;"),
             style="display: flex; align-items: center;"
         ),
-        action="/restorestage1", method="post", enctype="multipart/form-data"
+        action="/loadstage1", method="post", enctype="multipart/form-data"
     )
 
     # Card for displaying the book list
     card = Card(
         H3("Stage 1"),  # Title for the recommended books list
         H6("This displays the details collected from googleform responses. It displays the order such that the latest book request on the top."),
-        H6("On the top different stages links are also provided. Books present in each stage can be checked by just navigating to that satge."),
-        H6("Each book requests are currently restored from googlesheets csv file. Initially upload the csv googlesheetfile and restore the details."),
-        H6("Clicking move to stage 2 button the book request details go to stage 2 from stage 1."),
+        H6("On the top different stages links are also provided. Books present in each stage can be checked by just navigating to that stage."),
+        H6("Each book request is currently restored from Google Sheets CSV file. Initially, upload the CSV Google Sheet file and restore the details."),
+        H6("Clicking 'Move to Stage 2' button sends the book request details to stage 2 from stage 1."),
         table,  # Display the table
+        pagination_controls,  # Display pagination controls
         header=Div(
-            A("Stage2", href="/stage2", role="button", style="margin-left: 10px;height:50px"),
-            A("Stage3", href="/stage3", role="button", style="margin-left: 10px;height:50px"),
-            A("Stage4", href="/stage4", role="button", style="margin-left: 10px;height:50px"),
-            A("Stage5", href="/stage5", role="button", style="margin-left: 10px;height:50px"),
-            A("Stage6", href="/stage6", role="button", style="margin-left: 10px; height:50px "),
-            A("Download CSV", href="/downloadstage1", role="button", style="margin-left: 10px; white-space: nowrap ; height:50px"), 
+            A("Stage 2", href="/stage2", role="button", style="margin-left: 10px; white-space: nowrap ; height:50px; font-weight: 700;"),
+            A("Stage 3", href="/stage3", role="button", style="margin-left: 10px; white-space: nowrap ; height:50px; font-weight: 700;"),
+            A("Stage 4", href="/stage4", role="button", style="margin-left: 10px; white-space: nowrap ; height:50px; font-weight: 700;"),
+            A("Stage 5", href="/stage5", role="button", style="margin-left: 10px; white-space: nowrap ; height:50px; font-weight: 700;"),
+            A("Stage 6", href="/stage6", role="button", style="margin-left: 10px; white-space: nowrap ; height:50px; font-weight: 700;"),
+            A("Download All", href="/downloadentire", role="button", style="margin-left: 10px; white-space: nowrap ; height:50px; font-weight: 700;"),
+            A("Download Stage1", href="/downloadstage1", role="button", style="margin-left: 10px; white-space: nowrap ; height:50px; font-weight: 700;"),
             restore_form,
-            style="display: flex; gap: 10px;"  # Flexbox for layout  
+            style="display: flex; gap: 10px;"  # Flexbox for layout
         )
     )
-
-    # Return the page with the table
     return Titled('Book Recommendations', card)
-
 
 # Function to move the item to stage 2
 @app.get("/move_to_stage2_from_stage1/{isbn}")
@@ -115,14 +170,14 @@ def move_to_stage2(isbn: int):
     update_stage(isbn,1,2)
     return RedirectResponse("/stage2", status_code=302)
 
-@app.get("/downloadstage1")
+@app.get("/downloadentire")
 def download_csv():
     # Create an in-memory string buffer for CSV data
     csv_file = StringIO()
     writer = csv.writer(csv_file)
 
     # Write the header row for the CSV file
-    writer.writerow(["ID", "ISBN", "Recommender", "Email", "Number of Copies", "Purpose", "Remarks", "Date","status","modified_isbn","book_name","publisher","authors","currency","cost_currency","cost_inr","total_cost","approval_remarks","stage"])
+    writer.writerow(["ID", "ISBN", "Recommender", "Email", "Number of Copies", "Purpose", "Remarks", "Date","status","modified_isbn","book_name","publisher","seller","authors","currency","cost_currency","cost_inr","total_cost","approval_remarks","stage"])
 
     # Connect to the SQLite database and fetch all items
     connection = sqlite3.connect('data/library.db')
@@ -144,10 +199,44 @@ def download_csv():
     return StreamingResponse(
         csv_file,
         media_type="text/csv",
-        headers={"Content-Disposition": "attachment; filename=booksstage1.csv"}
+        headers={"Content-Disposition": "attachment; filename=booksdetails_complete.csv"}
     )
 
-@app.post("/restorestage1")
+@app.get("/downloadstage1")
+def download_csv():
+    # Create an in-memory string buffer for CSV data
+    csv_file = StringIO()
+    writer = csv.writer(csv_file)
+
+    # Write the header row for the CSV file
+    writer.writerow(["ID", "ISBN", "Recommender", "Email", "Number of Copies", "Purpose", "Remarks", "Date"])
+
+    # Connect to the SQLite database and fetch all items
+    connection = sqlite3.connect('data/library.db')
+    cursor = connection.cursor()
+    cursor.execute("SELECT id,isbn,recommender,email,number_of_copies,purpose,remarks,date FROM items ")
+    items = cursor.fetchall()
+
+    # Write each item to the CSV file
+    for item in items:
+        writer.writerow(item)
+
+    # Close the database connection
+    connection.close()
+
+    # Reset the cursor to the beginning of the buffer
+    csv_file.seek(0)
+
+    # Return the CSV file as a streaming response for download
+    return StreamingResponse(
+        csv_file,
+        media_type="text/csv",
+        headers={"Content-Disposition": "attachment; filename=booksdetails_stage1.csv"}
+    )
+
+
+
+@app.post("/loadstage1")
 async def restore_data(backup_file: UploadFile):
     contents = await backup_file.read()
     contents = contents.decode("utf-8")  # Decode the uploaded file's content
@@ -173,6 +262,7 @@ async def restore_data(backup_file: UploadFile):
         modified_isbn INTEGER,
         book_name TEXT,
         publisher TEXT,
+        seller TEXT,
         authors TEXT,
         currency TEXT,
         cost_currency REAL,
@@ -228,54 +318,113 @@ async def restore_data(backup_file: UploadFile):
     return RedirectResponse("/", status_code=302)
 
 @app.get("/stage2")
-def stage2():
-    # Fetch items for stage 2
-    items = fetch_items_for_stage2()
+def stage2(page: int = 1, sort_by: str = "date", order: str = "desc"):
+    items_per_page = 10
 
-    # Generate a table to display items in stage 2
+    # Fetch items for stage 2
+    all_items = fetch_items_for_stage2()
+
+    # Sorting logic
+    if sort_by in ["date", "email"]:
+        reverse = order == "desc"  # Set reverse based on 'desc' order
+        column_index = {"date": 15, "email": 4}[sort_by]
+        all_items.sort(key=lambda x: x[column_index], reverse=reverse)
+
+    # Pagination calculations
+    total_items = len(all_items)
+    total_pages = (total_items + items_per_page - 1) // items_per_page
+    start_index = (page - 1) * items_per_page
+    end_index = start_index + items_per_page
+    current_page_items = all_items[start_index:end_index]
+
+    # Pagination controls
+    visible_pages = 5
+    half_visible = visible_pages // 2
+    start_page = max(1, page - half_visible)
+    end_page = min(total_pages, page + half_visible)
+
+    if page <= half_visible:
+        end_page = min(total_pages, visible_pages)
+    if page > total_pages - half_visible:
+        start_page = max(1, total_pages - visible_pages + 1)
+
+    pagination_controls = Div(
+        *(
+            [
+                A("«", href=f"/stage2?page={page - 1}&sort_by={sort_by}&order={order}", style="margin-right: 10px;font-size: x-large;" + ("visibility: hidden;" if page == 1 else "visibility: visible;")),
+            ]
+            + [
+                A(
+                    str(i),
+                    href=f"/stage2?page={i}&sort_by={sort_by}&order={order}",
+                    style="margin-right: 10px; text-decoration: none; font-size: x-large ; " +
+                    ("font-weight: bold;" if i == page else "font-weight: normal;")
+                )
+                for i in range(start_page, end_page + 1)
+            ]
+            + [
+                A("»", href=f"/stage2?page={page + 1}&sort_by={sort_by}&order={order}", style="margin-left: 10px;font-size: x-large;" + ("visibility: hidden;" if page == total_pages else "visibility: visible;"))
+            ]
+        ),
+        style="margin-top: 10px; text-align: center;"
+    )
+
+    def get_sort_icon(column):
+        if sort_by == column:
+            return "▲" if order == "asc" else "▼"
+        return "⇅"
+
+    def create_sort_link(column):
+        # Set default order to "desc" if it's the first load (when order is not passed)
+        new_order = "asc" if sort_by == column and order == "desc" else "desc"
+        return A(get_sort_icon(column), href=f"/stage2?page={page}&sort_by={column}&order={new_order}", style="text-decoration: none; font-size: small; margin-left: 5px;")
+
+    # Generate the table with sortable headers for "Date" and "Email"
     table = Table(
         Tr(
-            Th("id"),
-            Th("Date"),
-            Th("ISBN"),
-            Th("Modified_ISBN"),
-            Th("Recommender"),
-            Th("Email"),
-            Th("Number of Copies"),
-            Th("Name of Book"),
-            Th("Remarks"),
-            Th("Publisher"),
-            Th("Author names"),
-            Th("Currency"),
-            Th("Cost in currency"),
-            Th("Cost in INR"),
-            Th("Total cost"),
-            Th("Action")
+            Th("Id", style="font-weight: 1000; text-align: center;"),
+            Th(Div("Date", create_sort_link("date"), style="""display: inline-flex; align-items: center; font-weight: 1000; text-align: center; justify-content: center;width: 100%; height: 100%;""")),
+            Th("ISBN", style="font-weight: 1000; text-align: center;"),
+            Th("Modified_ISBN", style="font-weight: 1000; text-align: center;"),
+            Th("Recommender", style="font-weight: 1000; text-align: center;"),
+            Th(Div("Email", create_sort_link("email"), style="""display: inline-flex; align-items: center; font-weight: 1000; text-align: center; justify-content: center;width: 100%; height: 100%;""")),
+            Th("Number of Copies", style="font-weight: 1000; text-align: center;"),
+            Th("Name of Book", style="font-weight: 1000; text-align: center;"),
+            Th("Remarks", style="font-weight: 1000; text-align: center;"),
+            Th("Publisher", style="font-weight: 1000; text-align: center;"),
+            Th("Seller", style="font-weight: 1000; text-align: center;"),
+            Th("Author Names", style="font-weight: 1000; text-align: center;"),
+            Th("Currency", style="font-weight: 1000; text-align: center;"),
+            Th("Cost in Currency", style="font-weight: 1000; text-align: center;"),
+            Th("Cost in INR", style="font-weight: 1000; text-align: center;"),
+            Th("Total Cost", style="font-weight: 1000; text-align: center;"),
+            Th("Action", style="font-weight: 1000; text-align: center;")
         ),
         *[
             Tr(
-                Td(item[0],style="font-size: smaller;"),
-                Td(item[14],style="font-size: smaller;"),  # Date
-                Td(item[1],style="font-size: smaller;"),   # ISBN
-                Td(item[2],style="font-size: smaller;"),   # Modified ISBN
-                Td(item[3],style="font-size: smaller;"),   # Recommender
-                Td(item[4],style="font-size: smaller;"),   # Email
-                Td(item[5],style="font-size: smaller;"),   # Number of Copies
-                Td(item[6],style="font-size: smaller;"),   # Name of Book
-                Td(item[7],style="font-size: smaller;"),   # Remarks
-                Td(item[8],style="font-size: smaller;"),   # Publisher
-                Td(item[9],style="font-size: smaller;"),   # Author names
-                Td(item[10],style="font-size: smaller;"),   # Currency
-                Td(item[11],style="font-size: smaller;"),  # Cost in currency
-                Td(item[12],style="font-size: smaller;"),  # Cost in INR
-                Td(item[13],style="font-size: smaller;"),  # Total cost
+                Td(item[0], style="font-size: smaller;"),
+                Td(item[15], style="font-size: smaller;"),  # Date
+                Td(item[1], style="font-size: smaller;"),   # ISBN
+                Td(item[2], style="font-size: smaller;"),   # Modified ISBN
+                Td(item[3], style="font-size: smaller;"),   # Recommender
+                Td(item[4], style="font-size: smaller;"),   # Email
+                Td(item[5], style="font-size: smaller;"),   # Number of Copies
+                Td(item[6], style="font-size: smaller;"),   # Name of Book
+                Td(item[7], style="font-size: smaller;"),   # Remarks
+                Td(item[8], style="font-size: smaller;"),   # Publisher
+                Td(item[9], style="font-size: smaller;"),
+                Td(item[10], style="font-size: smaller;"),
+                Td(item[11], style="font-size: smaller;"),
+                Td(item[12], style="font-size: smaller;"),
+                Td(item[13], style="font-size: smaller;"),
+                Td(item[14], style="font-size: smaller;"),
                 Td(
-                    A("Edit", href=f"/edit-book/{item[0]}",  style="display:block;font-size: smaller;margin-bottom:3px; width:130px") ,
-                    A("Move to Stage 3", href=f"/move_to_stage3_from_stage2/{item[1]}",style="display:block;font-size: smaller;margin-bottom:3px") ,
-                    A("Move to Stage 1", href=f"/move_to_stage1_from_stage2/{item[1]}",style="display:block;font-size: smaller;")
+                    A("Edit", href=f"/edit-book/{item[0]}", style="display:block;font-size: smaller;margin-bottom:3px; width:130px"),
+                    A("Move to Stage 3", href=f"/move_to_stage3_from_stage2/{item[1]}", style="display:block;font-size: smaller;margin-bottom:3px"),
+                    A("Move to Stage 1", href=f"/move_to_stage1_from_stage2/{item[1]}", style="display:block;font-size: smaller;")
                 )
             )
-            for item in items
+            for item in current_page_items
         ],
         style="border-collapse: collapse; width: 100%;",
         **{"border": "1"}  # Add border to the table
@@ -285,15 +434,51 @@ def stage2():
     card = Card(
         H4("Books in Stage 2"),  # Title for the list of books in stage 2
         table,  # Display the table
+        pagination_controls,  # Add pagination controls
         header=Div(
-            A("Back to Stage 1", href="/", role="button", style="margin-left: 10px;"),
-            A("Next Stage", href="/stage3", role="button", style="margin-left: 10px;"),
-            style="display: flex; gap: 10px;"  # Flexbox for layout  
+            A("Stage 1", href="/", role="button", style="margin-left: 10px; white-space: nowrap ; height:50px; font-weight: 700;"),
+            A("Stage 3", href="/stage3", role="button", style="margin-left: 10px; white-space: nowrap ; height:50px; font-weight: 700;"),
+            A("Stage 4", href="/stage4", role="button", style="margin-left: 10px; white-space: nowrap ; height:50px; font-weight: 700;"),
+            A("Stage 5", href="/stage5", role="button", style="margin-left: 10px; white-space: nowrap ; height:50px; font-weight: 700;"),
+            A("Stage 6", href="/stage6", role="button", style="margin-left: 10px; white-space: nowrap ; height:50px; font-weight: 700;"),
+            A("Download All", href="/downloadentire", role="button", style="margin-left: 10px; white-space: nowrap ; height:50px; font-weight: 700;"),
+            A("Download Stage2", href="/downloadstage2", role="button", style="margin-left: 10px; white-space: nowrap ; height:50px; font-weight: 700;"),
+            style="display: flex; gap: 10px;"  # Flexbox for layout
         )
     )
-
-    # Return the page with the table of stage 2 items
     return Titled('Stage 2 - Book Recommendations', card)
+
+@app.get("/downloadstage2")
+def download_csv():
+    # Create an in-memory string buffer for CSV data
+    csv_file = StringIO()
+    writer = csv.writer(csv_file)
+
+    # Write the header row for the CSV file
+    writer.writerow(["ID", "ISBN", "Recommender", "Email", "Number of Copies", "Purpose", "Remarks", "Date","modified_isbn","book_name","publisher","seller","authors","currency","cost_currency","cost_inr","total_cost"])
+
+    # Connect to the SQLite database and fetch all items
+    connection = sqlite3.connect('data/library.db')
+    cursor = connection.cursor()
+    cursor.execute("SELECT id,isbn,recommender,email,number_of_copies,purpose,remarks,date,modified_isbn,book_name,publisher,seller,authors,currency,cost_currency,cost_inr,total_cost FROM items ")
+    items = cursor.fetchall()
+
+    # Write each item to the CSV file
+    for item in items:
+        writer.writerow(item)
+
+    # Close the database connection
+    connection.close()
+
+    # Reset the cursor to the beginning of the buffer
+    csv_file.seek(0)
+
+    # Return the CSV file as a streaming response for download
+    return StreamingResponse(
+        csv_file,
+        media_type="text/csv",
+        headers={"Content-Disposition": "attachment; filename=booksdetails_complete.csv"}
+    )
 
 @app.get("/move_to_stage1_from_stage2/{isbn}")
 def move_to_stage2(isbn: int):
@@ -304,9 +489,6 @@ def move_to_stage2(isbn: int):
 def move_to_stage2(isbn: int):
     update_stage(isbn,2,3)
     return RedirectResponse("/stage2", status_code=302)
-
-
-
 
 def fetch_items_for_stage1():
     # Connect to the SQLite database
@@ -349,7 +531,7 @@ def fetch_items_for_stage2():
 
     # Fetch items from the database where current_stage matches the given stage, sorted by date in descending order
     cursor.execute("""
-        SELECT id,isbn, modified_isbn,recommender,email,number_of_copies,book_name,remarks,publisher,authors,currency,cost_currency,cost_inr,total_cost,date
+        SELECT id,isbn, modified_isbn,recommender,email,number_of_copies,book_name,remarks,publisher,seller,authors,currency,cost_currency,cost_inr,total_cost,date
         FROM items 
         WHERE current_stage = 2
         ORDER BY date DESC
@@ -361,17 +543,17 @@ def fetch_items_for_stage2():
 
     # Convert the date to proper datetime format and sort if necessary
     for idx, item in enumerate(items):
-        date_str = item[14]  # The date is at index 6 in the tuple
+        date_str = item[15]  # The date is at index 6 in the tuple
         try:
             # If the date is not in ISO format, parse it and convert it to ISO format
             parsed_date = datetime.strptime(date_str, "%m.%d.%Y %H:%M:%S")
-            items[idx] = item[:14] + (parsed_date.strftime("%Y-%m-%d %H:%M:%S"),) + item[14:]
+            items[idx] = item[:15] + (parsed_date.strftime("%Y-%m-%d %H:%M:%S"),) + item[15:]
         except ValueError:
             # Handle invalid date format if needed
             print(f"Invalid date format for {date_str} at index {idx}")
 
     # Sort by date in descending order after conversion
-    items.sort(key=lambda x: x[14], reverse=True)
+    items.sort(key=lambda x: x[15], reverse=True)
 
     return items
 
@@ -380,6 +562,7 @@ def edit_book(id: int):
     
     res = Form(
         Button("Save", role="button", style="margin-bottom: 15px;"),
+        A('Back', href='/stage2', role="button", style="margin:15px"),
         
         # ISBN (non-editable)
         Group(
@@ -434,6 +617,12 @@ def edit_book(id: int):
             Input(id="publisher"),
             style="display: flex; align-items: center; gap: 10px;"
         ),
+
+        Group(
+            H6("seller", style="margin-right: 10px; min-width: 60px; text-align: left;"),
+            Input(id="seller"),
+            style="display: flex; align-items: center; gap: 10px;"
+        ),
         
         # Author names (editable)
         Group(
@@ -472,7 +661,7 @@ def edit_book(id: int):
         
         # Actions: Save, Delete, Back
        # Button("Save", role="button", style="margin-bottom: 15px;"),
-        A('Back', href='/stage2', role="button", style="margin:15px"),
+       
         action="/update-bookstage2", id="edit", method='post'
     )
     
@@ -486,7 +675,8 @@ def update_bookstage2(isbn: int,
                       modified_isbn: int,
                       number_of_copies : int,
                       book_name: str, 
-                      publisher: str, 
+                      publisher: str,
+                      seller: str, 
                       authors: str, 
                       currency: str, 
                       cost_currency: float, 
@@ -521,7 +711,8 @@ def update_bookstage2(isbn: int,
                 modified_isbn = ?, 
                 number_of_copies =?,
                 book_name = ?, 
-                publisher = ?, 
+                publisher = ?,
+                seller = ?, 
                 authors = ?, 
                 currency = ?, 
                 cost_currency = ?, 
@@ -530,7 +721,7 @@ def update_bookstage2(isbn: int,
             WHERE 
                 isbn = ? AND 
                 current_stage = 2
-        """, (modified_isbn, number_of_copies, book_name, publisher, authors, currency, cost_currency, cost_inr, total_cost, isbn))
+        """, (modified_isbn, number_of_copies, book_name, publisher,seller, authors, currency, cost_currency, cost_inr, total_cost, isbn))
         
         # Commit the transaction
         connection.commit()

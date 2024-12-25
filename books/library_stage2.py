@@ -36,6 +36,15 @@ app, rt, BookRecommendations, BookRecommendation = fast_app(
 def is_valid_isbn(isbn: int) -> bool:
     return bool(re.match(r'^\d{10}$', isbn)) or bool(re.match(r'^\d{13}$', isbn))
 
+def update_stage(isbn: int, current_stage: int,new_stage: int):
+    with sqlite3.connect('data/library.db') as connection:
+        cursor = connection.cursor()
+        cursor.execute("SELECT id FROM items WHERE isbn = ? AND current_stage = ?", (isbn, current_stage))
+        book= cursor.fetchone()
+        if book:
+            cursor.execute("UPDATE items SET current_stage = ? WHERE isbn = ? AND current_stage = ?",(new_stage, isbn, current_stage))
+        connection.commit()
+
 @app.get("/")
 def home():
     # Fetch items from the database
@@ -103,22 +112,7 @@ def home():
 # Function to move the item to stage 2
 @app.get("/move_to_stage2_from_stage1/{isbn}")
 def move_to_stage2(isbn: int):
-    # Connect to the SQLite database
-    connection = sqlite3.connect('data/library.db')
-    cursor = connection.cursor()
-
-    # Check if the book exists in stage 2
-    cursor.execute("SELECT id FROM items WHERE isbn = ? AND current_stage = 1", (isbn,))
-    book = cursor.fetchone()
-
-    if book:
-    # Update the item to stage 2
-        cursor.execute("UPDATE items SET current_stage = 2 WHERE isbn = ? AND current_stage = 1", (isbn,))
-        connection.commit()
-
-
-    connection.close()
-
+    update_stage(isbn,1,2)
     return RedirectResponse("/stage2", status_code=302)
 
 @app.get("/downloadstage1")
@@ -152,7 +146,6 @@ def download_csv():
         media_type="text/csv",
         headers={"Content-Disposition": "attachment; filename=booksstage1.csv"}
     )
-
 
 @app.post("/restorestage1")
 async def restore_data(backup_file: UploadFile):
@@ -278,8 +271,8 @@ def stage2():
                 Td(item[13],style="font-size: smaller;"),  # Total cost
                 Td(
                     A("Edit", href=f"/edit-book/{item[0]}",  style="display:block;font-size: smaller;margin-bottom:3px; width:130px") ,
-                    A("Move to Stage 3", href=f"/move_to_stage1_from_stage2/{item[1]}",style="display:block;font-size: smaller;margin-bottom:3px") ,
-                    A("Move to Stage 1", href=f"/move_to_stage3_from_stage2/{item[1]}",style="display:block;font-size: smaller;")
+                    A("Move to Stage 3", href=f"/move_to_stage3_from_stage2/{item[1]}",style="display:block;font-size: smaller;margin-bottom:3px") ,
+                    A("Move to Stage 1", href=f"/move_to_stage1_from_stage2/{item[1]}",style="display:block;font-size: smaller;")
                 )
             )
             for item in items
@@ -301,44 +294,15 @@ def stage2():
 
     # Return the page with the table of stage 2 items
     return Titled('Stage 2 - Book Recommendations', card)
+
 @app.get("/move_to_stage1_from_stage2/{isbn}")
 def move_to_stage2(isbn: int):
-    # Connect to the SQLite database
-    connection = sqlite3.connect('data/library.db')
-    cursor = connection.cursor()
-
-    # Check if the book exists in stage 2
-    cursor.execute("SELECT id FROM items WHERE isbn = ? AND current_stage = 2", (isbn,))
-    book = cursor.fetchone()
-
-    if book:
-    # Update the item to stage 2
-        cursor.execute("UPDATE items SET current_stage = 1 WHERE isbn = ? AND current_stage = 2", (isbn,))
-        connection.commit()
-
-
-    connection.close()
-
+    update_stage(isbn,2,1)
     return RedirectResponse("/stage2", status_code=302)
 
 @app.get("/move_to_stage3_from_stage2/{isbn}")
 def move_to_stage2(isbn: int):
-    # Connect to the SQLite database
-    connection = sqlite3.connect('data/library.db')
-    cursor = connection.cursor()
-
-    # Check if the book exists in stage 2
-    cursor.execute("SELECT id FROM items WHERE isbn = ? AND current_stage = 2", (isbn,))
-    book = cursor.fetchone()
-
-    if book:
-    # Update the item to stage 2
-        cursor.execute("UPDATE items SET current_stage = 3 WHERE isbn = ? AND current_stage = 2", (isbn,))
-        connection.commit()
-
-
-    connection.close()
-
+    update_stage(isbn,2,3)
     return RedirectResponse("/stage2", status_code=302)
 
 

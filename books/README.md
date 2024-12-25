@@ -31,6 +31,7 @@ To help the librarian, we need to build a chhootu webpage that can help track al
 	* Make the data sortable by the date column. 
 	* For each item in the table, create a checkbox (As the first table entry)
 	* After the description of the page, add a button which upon clicking moves the entries whose checkbox are selected over to stage 2.
+    - Stage 1 completed.
 
 * Stage 2: Processing and Invoice generation
     - The librarian takes the newly recommended books and finds the correct
@@ -48,12 +49,19 @@ To help the librarian, we need to build a chhootu webpage that can help track al
         * Name of book (editable, text)
         * Remarks (editable, specifc for stage 2 (don't copy from stage 1))
         * Publisher (editable, text)
+        * **Seller (editable, text)**
         * Author names (editable, text)
         * Currency  (editable, text)
         * Cost in currency (editable, number)
         * Cost in INR (editable, number)
         * Total cost (editable, number, automatically calculated from the given data)
         * Date on which request is placed (non editable, from stage 1)
+    - Ability to sort based on email and date column
+    - Pagination of data displayed. Display max 10 books.
+    - (Ambitious) Once the Modified ISBN is entered, use public service API (have to find out) and fetch the book title name, authors and the publisher information.
+    - Download of books specific to a given stage.
+    - Try and see if you can deploy the stages to `pythonanywhere.com`
+    
 
 * Stage 3: Submitted for Approval from Dean Academics
     - The invoice prepared in Stage 1 is emailed to Dean Academics who will approve or not approve.

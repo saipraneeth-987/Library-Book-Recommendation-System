@@ -47,7 +47,7 @@ To help the librarian, we need to build a chhootu webpage that can help track al
         * Name of recommender (non editable, from stage 1)
         * Number of copies (editable, number)
         * Name of book (editable, text)
-        * Remarks (editable, specifc for stage 2 (don't copy from stage 1))
+        * Remarks (editable, specific for stage 2 (don't copy from stage 1))
         * Publisher (editable, text)
         * **Seller (editable, text)**
         * Author names (editable, text)
@@ -75,23 +75,46 @@ To help the librarian, we need to build a chhootu webpage that can help track al
         * Cost in INR (editable, number)
         * Date on which stage 2 is completed (non editable, autocalculated based on when stage 1 is completed)
         * Status of approval from Dean academics (editable, Boolean: approved/not approved)
-        * Remarks (editable, specifc for stage 3 (don't copy from stage 2))
+        * Remarks (editable, specific for stage 3 (don't copy from stage 2))
         
 * Stage 4: Placing purchase order
     - Librarian then obtain quotes from online/offline vendors and places the purchase order
     - Desirable information to be maintained and displayed in this stage are
-        * To be written
+        * Date on which stage 3 (Dean acads approval) is completed (non editable, autocalculated based on date of move to stage 4)
+        * ISBN (non editable, from stage 3)
+        * Name of book (non editable, from stage 3)
+        * Name of authors (non editable, from stage 3)
+        * Number of copies (non editable, from stage 3)
+        * Currency  (editable, text)
+        * Cost in currency (non editable, number)
+        * Cost in INR (non editable, number)
+        * Vendor name (editable, text)
+	* Vendor address (editable, text)
+	* Vendor invoice number (editable, text+number)
+        * Remarks (editable, specific for stage 4 (don't copy from stage 3))
 
 * Stage 5: Book acquisition 
-    - The book has arrivied in the library. The books bundle needs to be opened
+    - The book has arrived in the library. The books bundle needs to be opened
     and proper cataloging needs to be done.
     - Desirable information to be maintained and displayed in this stage are
-        * To be written
+        * Date on which stage 4 (placing the order) is completed (non editable, autocalculated based on date of move to stage 5)
+        * ISBN (non editable, from stage 4)
+        * Name of book (non editable, from stage 4)
+        * Number of copies (non editable, from stage 4)
+	* Library location (editable, text)
+        * Remarks (editable, specific for stage 5 (don't copy from stage 4))
 
 * Stage 6: Book in circulation
     - Once stage 4 is over, the book is ready for circulation.
     - Desirable information to be maintained and displayed in this stage are
-        * To be written
+        * Date on which stage 5 (book aquisition) is completed (non editable, autocalculated based on date of move to stage 6)
+        * Name of book (non editable, from stage 5)
+        * Name of authors (non editable, from stage 5)
+        * Number of copies (non editable, from stage 5)
+        * Vendor name (non editable, text, from stage 5)
+	* Vendor address (non editable, text, from stage 5)
+        * Name of recommender (non editable, text, from stage 1)
+        * Remarks (editable, specific for stage 6 (don't copy from stage 5))
 
 ## Implementation ##
 You can assume that the list of new books is given as a CSV file (sample

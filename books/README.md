@@ -26,11 +26,11 @@ To help the librarian, we need to build a chhootu webpage that can help track al
         * Name of recommender (non editable, text)
         * Date on which request is placed (non editable, date).
     - Desirable Features
-	* At the beginning of the page for stage 1, explain what the stage does (as a small description para).
+	    * At the beginning of the page for stage 1, explain what the stage does (as a small description para).
     	* Display this information as table with appropriate headers. 
-	* Make the data sortable by the date column. 
-	* For each item in the table, create a checkbox (As the first table entry)
-	* After the description of the page, add a button which upon clicking moves the entries whose checkbox are selected over to stage 2.
+    	* Make the data sortable by the date column. 
+	    * For each item in the table, create a checkbox (As the first table entry)
+    	* After the description of the page, add a button which upon clicking moves the entries whose checkbox are selected over to stage 2.
     - Stage 1 completed.
 
 * Stage 2: Processing and Invoice generation
@@ -89,8 +89,8 @@ To help the librarian, we need to build a chhootu webpage that can help track al
         * Cost in currency (non editable, number)
         * Cost in INR (non editable, number)
         * Vendor name (editable, text)
-	* Vendor address (editable, text)
-	* Vendor invoice number (editable, text+number)
+	    * Vendor address (editable, text)
+    	* Vendor invoice number (editable, text+number)
         * Remarks (editable, specific for stage 4 (don't copy from stage 3))
 
 * Stage 5: Book acquisition 
@@ -112,7 +112,7 @@ To help the librarian, we need to build a chhootu webpage that can help track al
         * Name of authors (non editable, from stage 5)
         * Number of copies (non editable, from stage 5)
         * Vendor name (non editable, text, from stage 5)
-	* Vendor address (non editable, text, from stage 5)
+	    * Vendor address (non editable, text, from stage 5)
         * Name of recommender (non editable, text, from stage 1)
         * Remarks (editable, specific for stage 6 (don't copy from stage 5))
 

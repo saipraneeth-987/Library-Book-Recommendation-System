@@ -5,7 +5,7 @@ import sqlite3
 import os
 from fastapi.responses import StreamingResponse, RedirectResponse
 import re
-from datetime import datetime
+from datetime import datetime, timedelta
 import requests
 
 # Initialize the FastAPI application
@@ -69,17 +69,53 @@ def get_book_details(isbn):
     else:
         return {f"Failed to fetch details: {response.status_code}"}
 
+def filter_by_date(all_items, date_range):
+    today = datetime.today()
+
+    # Set the start date based on the selected date range
+    if date_range == '1month':
+        start_date = today - timedelta(days=30)
+    elif date_range == '3months':
+        start_date = today - timedelta(days=90)
+    elif date_range == '6months':
+        start_date = today - timedelta(days=180)
+    else:
+        return all_items  # No filter if 'all' is selected
+
+    # Filter items where the date is within the selected range
+    filtered_items = []
+    for item in all_items:
+        try:
+            # Assuming item[6] contains the date in "%Y-%m-%d %H:%M:%S" format
+            item_date = datetime.strptime(item[6], "%Y-%m-%d %H:%M:%S")
+            if item_date >= start_date:
+                filtered_items.append(item)
+        except Exception as e:
+            print(f"Error parsing date for item: {item} - {e}")
+            continue
+
+    return filtered_items
 
 @app.get("/")
-def home(page: int = 1, sort_by: str = "date", order: str = "desc"):
+def home(page: int = 1, sort_by: str = "date", order: str = "desc",search: str = "", date_range: str = "all"):
     items_per_page = 10
     all_items = fetch_items_for_stage1()
+    all_items = filter_by_date(all_items, date_range)
 
     # Apply sorting only for 'date' and 'email' columns
     if sort_by in ["date", "email"]:
         reverse = order == "desc"
         column_index = {"date": 6, "email": 2}[sort_by]
         all_items.sort(key=lambda x: x[column_index], reverse=reverse)
+
+
+    # Implement the search functionality
+    if search:
+        search_lower = search.lower()
+        all_items = [
+            item for item in all_items
+            if any(search_lower in str(value).lower() for value in item)
+        ]
 
     total_items = len(all_items)
     total_pages = (total_items + items_per_page - 1) // items_per_page
@@ -101,19 +137,19 @@ def home(page: int = 1, sort_by: str = "date", order: str = "desc"):
     pagination_controls = Div(
         *(
             [
-                A("«", href=f"/?page={page - 1}&sort_by={sort_by}&order={order}", style="margin-right: 10px;font-size: x-large;" + ("visibility: hidden;" if page == 1 else "visibility: visible;")),
+                A("«", href=f"/?page={page - 1}&sort_by={sort_by}&order={order}&search={search}", style="margin-right: 10px;font-size: x-large;" + ("visibility: hidden;" if page == 1 else "visibility: visible;")),
             ]
             + [
                 A(
                     str(i),
-                    href=f"/?page={i}&sort_by={sort_by}&order={order}",
+                    href=f"/?page={i}&sort_by={sort_by}&order={order}&search={search}",
                     style="margin-right: 10px; text-decoration: none; font-size: x-large ; " +
                     ("font-weight: bold;" if i == page else "font-weight: normal;")
                 )
                 for i in range(start_page, end_page + 1)
             ]
             + [
-                A("»", href=f"/?page={page + 1}&sort_by={sort_by}&order={order}", style="margin-left: 10px;font-size: x-large;" + ("visibility: hidden;" if page == total_pages else "visibility: visible;"))
+                A("»", href=f"/?page={page + 1}&sort_by={sort_by}&order={order}&search={search}", style="margin-left: 10px;font-size: x-large;" + ("visibility: hidden;" if page == total_pages else "visibility: visible;"))
             ]
         ),
         style="margin-top: 10px; text-align: center;"
@@ -127,7 +163,22 @@ def home(page: int = 1, sort_by: str = "date", order: str = "desc"):
     def create_sort_link(column):
         # Set default order to "desc" if it's the first load (when order is not passed)
         new_order = "asc" if sort_by == column and order == "desc" else "desc"
-        return A(get_sort_icon(column), href=f"/?page={page}&sort_by={column}&order={new_order}", style="text-decoration: none; font-size: small; margin-left: 5px;")
+        return A(get_sort_icon(column), href=f"/?page={page}&sort_by={column}&order={new_order}&search={search}", style="text-decoration: none; font-size: small; margin-left: 5px;")
+
+    date_range_options = Form(
+        Group(
+            Input(type="radio", name="date_range", value="all", id="all", checked=(date_range == "all")),
+            Label("All", for_="all", style="margin-right: 10px;"),
+            Input(type="radio", name="date_range", value="1month", id="1month", checked=(date_range == "1month")),
+            Label("Last 1 Month", for_="1month", style="margin-right: 10px;"),
+            Input(type="radio", name="date_range", value="3months", id="3months", checked=(date_range == "3months")),
+            Label("Last 3 Months", for_="3months", style="margin-right: 10px;"),
+            Input(type="radio", name="date_range", value="6months", id="6months", checked=(date_range == "6months")),
+            Label("Last 6 Months", for_="6months"),
+            style="margin-bottom: 20px; display: flex; align-items: center;"
+        ),
+        action="/", method="get"
+    )
 
     table = Table(
         Tr(
@@ -156,6 +207,16 @@ def home(page: int = 1, sort_by: str = "date", order: str = "desc"):
         style="border-collapse: collapse; width: 100%;",
         **{"border": "1"}
     )
+
+    search_box = Form(
+        Group(
+            Input(type="text", name="search", value=search, placeholder="Search...", style="margin-right: 10px; padding: 5px;"),
+            Button("Search", type="submit", style="font-weight: 600;"),
+            style="display: flex; align-items: center;"
+        ),
+        action="/", method="get"
+    )
+
     restore_form = Form(
         Group(
             Input(type="file", name="backup_file", accept=".csv", required=True, style="margin-right: 10px;"),
@@ -165,14 +226,14 @@ def home(page: int = 1, sort_by: str = "date", order: str = "desc"):
         action="/loadstage1", method="post", enctype="multipart/form-data"
     )
 
-    # Card for displaying the book list
     card = Card(
-        H3("Stage 1"),  # Title for the recommended books list
+        H3("Stage 1"),
         H6("This displays the details collected from googleform responses. It displays the order such that the latest book request on the top."),
-        H6("On the top different stages links are also provided. Books present in each stage can be checked by just navigating to that stage."),
         H6("Each book request is currently restored from Google Sheets CSV file. Initially, upload the CSV Google Sheet file and restore the details."),
         H6("Clicking 'Move to Stage 2' button sends the book request details to stage 2 from stage 1."),
-        table,  # Display the table
+        search_box,
+        date_range_options,
+        table,  
         pagination_controls,  # Display pagination controls
         header=Div(
             A("Stage 2", href="/stage2", role="button", style="margin-left: 10px; white-space: nowrap ; height:50px; font-weight: 700;"),
@@ -342,11 +403,18 @@ async def restore_data(backup_file: UploadFile):
     return RedirectResponse("/", status_code=302)
 
 @app.get("/stage2")
-def stage2(page: int = 1, sort_by: str = "date", order: str = "desc"):
+def stage2(page: int = 1, sort_by: str = "date", order: str = "desc", search: str= ""):
     items_per_page = 10
 
     # Fetch items for stage 2
     all_items = fetch_items_for_stage2()
+
+    if search:
+        search_lower = search.lower()
+        all_items = [
+            item for item in all_items
+            if any(search_lower in str(value).lower() for value in item)
+        ]
 
     # Sorting logic
     if sort_by in ["date", "email"]:
@@ -391,6 +459,15 @@ def stage2(page: int = 1, sort_by: str = "date", order: str = "desc"):
             ]
         ),
         style="margin-top: 10px; text-align: center;"
+    )
+
+    search_box = Form(
+        Group(
+            Input(type="text", name="search", value=search, placeholder="Search...", style="margin-right: 10px; padding: 5px;"),
+            Button("Search", type="submit", style="font-weight: 600;"),
+            style="display: flex; align-items: center;"
+        ),
+        action="/stage2", method="get"
     )
 
     def get_sort_icon(column):
@@ -456,7 +533,10 @@ def stage2(page: int = 1, sort_by: str = "date", order: str = "desc"):
 
     # Card for displaying the book list in stage 2
     card = Card(
-        H4("Books in Stage 2"),  # Title for the list of books in stage 2
+        H3("Stage 2"),  # Title for the list of books in stage 2
+        H6("In this can edit the book details like the modified isbn and other . This can be done by collecting those details from the amazon,google etc "),
+        H6("ISBN,Recommender,email,date all these are not editable and remaining are editable."),
+        search_box,
         table,  # Display the table
         pagination_controls,  # Add pagination controls
         header=Div(
@@ -609,8 +689,8 @@ async def edit_book(id: int):
             style="display: flex; align-items: center; gap: 10px;"
         ),
         Group(
-            H6("Email", style="margin-right: 10px; min-width: 60px; text-align: left;"),
-            Input(id="email", readonly=True),  # Fetch recommender from stored data
+            H6("Email", style="margin-right: 10px; min-width: 60px; text-align: left;color: #53B6AC;"),
+            Input(id="email", readonly=True, style ="border:1px solid #588C87;"),  # Fetch recommender from stored data
             style="display: flex; align-items: center; gap: 10px;"
         ),
         # Number of copies (editable)

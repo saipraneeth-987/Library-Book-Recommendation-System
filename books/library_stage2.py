@@ -770,7 +770,41 @@ async def edit_book(id: int):
     
     # Fill the form with existing data
     frm = fill_form(res,BookRecommendations[id] )
-    js = """ 
+    js = """
+    window.onload = async function(){
+        const isbn = document.getElementById('modified_isbn').value;
+        console.log('Modified ISBN:', isbn);
+
+        const authors = document.getElementById('authors');
+        const title = document.getElementById('book_name');
+        const publishers = document.getElementById('publisher');
+        try {
+                const response =await fetch(`/api/get-book-details?isbn=${isbn}`);
+                console.log(response)
+                if (response.ok) {
+                    const data = await response.json();
+                    console.log(data)
+                    if (data.error) {
+                        authors.value = "";
+                        title.value = "";
+                        publishers.value = "";
+                    } else {
+                        console.log("came")
+                        console.log(data.authors)
+                        authors.value = data.authors || "Unknown Authors";
+                        title.value = data.title || "Unknown Title";
+                        publishers.value = data.publishers || "Unknown Publishers";
+                        }
+                    }
+                else {
+                    console.log("error in response")
+                    }
+                } catch (error) {
+                    authors.value ="";
+                    title.value ="";
+                    publishers.value ="";
+                }
+        }                       
     document.getElementById('modified_isbn').oninput = async function () {
         const isbn = document.getElementById('modified_isbn').value; 
         console.log('Modified ISBN:', isbn); 

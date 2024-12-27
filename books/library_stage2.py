@@ -6,6 +6,7 @@ import os
 from fastapi.responses import StreamingResponse, RedirectResponse
 import re
 from datetime import datetime
+import requests
 
 # Initialize the FastAPI application
 app, rt, BookRecommendations, BookRecommendation = fast_app(
@@ -45,6 +46,29 @@ def update_stage(isbn: int, current_stage: int,new_stage: int):
         if book:
             cursor.execute("UPDATE items SET current_stage = ? WHERE isbn = ? AND current_stage = ?",(new_stage, isbn, current_stage))
         connection.commit()
+
+@app.get("/api/get-book-details")
+async def get_book_details_api(isbn: str ):
+    return get_book_details(isbn)
+
+def get_book_details(isbn):
+    url = f"https://openlibrary.org/api/books?bibkeys=ISBN:{isbn}&format=json&jscmd=data"
+    response = requests.get(url)
+    if response.status_code == 200:
+        data = response.json()
+        key = f"ISBN:{isbn}"
+        if key in data:
+            book = data[key]
+            title = book.get("title", "Unknown Title")
+            authors = ", ".join([author["name"] for author in book.get("authors", [])])
+            publishers = ",".join([publisher["name"] for publisher in book.get("publishers",[])])
+            print(book)
+            return {"title": title, "authors": authors, "publishers": publishers}
+        else:
+            return {"error": "Book not found"}
+    else:
+        return {f"Failed to fetch details: {response.status_code}"}
+
 
 @app.get("/")
 def home(page: int = 1, sort_by: str = "date", order: str = "desc"):
@@ -558,7 +582,7 @@ def fetch_items_for_stage2():
     return items
 
 @app.get("/edit-book/{id}")
-def edit_book(id: int):
+async def edit_book(id: int):
     
     res = Form(
         Button("Save", role="button", style="margin-bottom: 15px;"),
@@ -566,8 +590,8 @@ def edit_book(id: int):
         
         # ISBN (non-editable)
         Group(
-            H6("ISBN", style="margin-right: 10px; min-width: 60px; text-align: left;"),
-            Input(id="isbn", readonly=True),  # Fetch ISBN from the stored data
+            H6("ISBN", style="margin-right: 10px; min-width: 60px; text-align: left; color: #53B6AC"),
+            Input(id="isbn", readonly=True, style ="border:1px solid #588C87"),  # Fetch ISBN from the stored data
             style="display: flex; align-items: center; gap: 10px;"
         ),
         
@@ -580,11 +604,10 @@ def edit_book(id: int):
         
         # Name of recommender (non-editable)
         Group(
-            H6("Recommender", style="margin-right: 10px; min-width: 60px; text-align: left;"),
-            Input(id="recommender", readonly=True),  # Fetch recommender from stored data
+            H6("Recommender", style="margin-right: 10px; min-width: 60px; text-align: left;color: #53B6AC;"),
+            Input(id="recommender", readonly=True, style ="border:1px solid #588C87;"),  # Fetch recommender from stored data
             style="display: flex; align-items: center; gap: 10px;"
         ),
-
         Group(
             H6("Email", style="margin-right: 10px; min-width: 60px; text-align: left;"),
             Input(id="email", readonly=True),  # Fetch recommender from stored data
@@ -658,7 +681,7 @@ def edit_book(id: int):
             Input(id="total_cost", type="number"),  # Read-only
             style="display: flex; align-items: center; gap: 10px;"
         ),
-        
+
         # Actions: Save, Delete, Back
        # Button("Save", role="button", style="margin-bottom: 15px;"),
        
@@ -667,7 +690,41 @@ def edit_book(id: int):
     
     # Fill the form with existing data
     frm = fill_form(res,BookRecommendations[id] )
-    return Titled('Edit Book Recommendation', frm)
+    js = """ 
+    document.getElementById('modified_isbn').oninput = async function () {
+        const isbn = document.getElementById('modified_isbn').value; 
+        console.log('Modified ISBN:', isbn); 
+    
+        const authors = document.getElementById('authors'); 
+        const title = document.getElementById('book_name');
+        const publishers = document.getElementById('publisher');
+        try {
+            const response = await fetch(`/api/get-book-details?isbn=${isbn}`);
+            console.log(response)
+            if (response.ok) {
+                const data = await response.json();
+                console.log(data)
+                if (data.error) {
+                    authors.value = "Error: " + data.error;
+                    title.value = "";
+                    publishers.value = "";
+                } else {
+                    console.log("came")
+                    console.log(data.authors)
+                    authors.value = data.authors || "Unknown Authors";
+                    console.log(authors.value)
+                    title.value = data.title || "Unknown Title";
+                    publishers.value = data.publishers || "Unknown Publishers";
+                }
+            } else {
+                authors.value = `Error: ${response.status}`;
+            }
+        } catch (error) {
+            authors.value = "Error fetching details";
+        }
+    };
+    """
+    return Titled('Edit Book Recommendation', frm, Script(src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.1/fabric.min.js"), Script(js))
 
 
 @app.post("/update-bookstage2")

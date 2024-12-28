@@ -75,6 +75,7 @@ def filter_by_date(all_items, date_range):
     # Set the start date based on the selected date range
     if date_range == '1month':
         start_date = today - timedelta(days=30)
+        print(start_date)
     elif date_range == '3months':
         start_date = today - timedelta(days=90)
     elif date_range == '6months':
@@ -101,7 +102,7 @@ def home(page: int = 1, sort_by: str = "date", order: str = "desc",search: str =
     items_per_page = 10
     all_items = fetch_items_for_stage1()
     all_items = filter_by_date(all_items, date_range)
-
+    print(date_range)
     # Apply sorting only for 'date' and 'email' columns
     if sort_by in ["date", "email"]:
         reverse = order == "desc"
@@ -167,13 +168,13 @@ def home(page: int = 1, sort_by: str = "date", order: str = "desc",search: str =
 
     date_range_options = Form(
         Group(
-            Input(type="radio", name="date_range", value="all", id="all", checked=(date_range == "all")),
+            Input(type="radio", name="date_range", value="all", id="all", checked=(date_range == "all"),onchange="this.form.submit()"),
             Label("All", for_="all", style="margin-right: 10px;"),
-            Input(type="radio", name="date_range", value="1month", id="1month", checked=(date_range == "1month")),
+            Input(type="radio", name="date_range", value="1month", id="1month", checked=(date_range == "1month"),onchange="this.form.submit()"),
             Label("Last 1 Month", for_="1month", style="margin-right: 10px;"),
-            Input(type="radio", name="date_range", value="3months", id="3months", checked=(date_range == "3months")),
+            Input(type="radio", name="date_range", value="3months", id="3months", checked=(date_range == "3months"),onchange="this.form.submit()"),
             Label("Last 3 Months", for_="3months", style="margin-right: 10px;"),
-            Input(type="radio", name="date_range", value="6months", id="6months", checked=(date_range == "6months")),
+            Input(type="radio", name="date_range", value="6months", id="6months", checked=(date_range == "6months"),onchange="this.form.submit()"),
             Label("Last 6 Months", for_="6months"),
             style="margin-bottom: 20px; display: flex; align-items: center;"
         ),

@@ -771,41 +771,7 @@ async def edit_book(id: int):
     # Fill the form with existing data
     frm = fill_form(res,BookRecommendations[id] )
     js = """
-    window.onload = async function(){
-        const isbn = document.getElementById('modified_isbn').value;
-        console.log('Modified ISBN:', isbn);
-
-        const authors = document.getElementById('authors');
-        const title = document.getElementById('book_name');
-        const publishers = document.getElementById('publisher');
-        try {
-                const response =await fetch(`/api/get-book-details?isbn=${isbn}`);
-                console.log(response)
-                if (response.ok) {
-                    const data = await response.json();
-                    console.log(data)
-                    if (data.error) {
-                        authors.value = "";
-                        title.value = "";
-                        publishers.value = "";
-                    } else {
-                        console.log("came")
-                        console.log(data.authors)
-                        authors.value = data.authors || "Unknown Authors";
-                        title.value = data.title || "Unknown Title";
-                        publishers.value = data.publishers || "Unknown Publishers";
-                        }
-                    }
-                else {
-                    console.log("error in response")
-                    }
-                } catch (error) {
-                    authors.value ="";
-                    title.value ="";
-                    publishers.value ="";
-                }
-        }                       
-    document.getElementById('modified_isbn').oninput = async function () {
+    async function load_book_details(){
         const isbn = document.getElementById('modified_isbn').value; 
         console.log('Modified ISBN:', isbn); 
     
@@ -823,7 +789,7 @@ async def edit_book(id: int):
                     title.value = "";
                     publishers.value = "";
                 } else {
-                    console.log("came")
+                    console.log("found")
                     console.log(data.authors)
                     authors.value = data.authors || "Unknown Authors";
                     console.log(authors.value)
@@ -831,12 +797,20 @@ async def edit_book(id: int):
                     publishers.value = data.publishers || "Unknown Publishers";
                 }
             } else {
-                authors.value = `Error: ${response.status}`;
+                console.log("error in response");
+                authors.value ="";
+                title.value ="";
+                publishers.value ="";
             }
         } catch (error) {
-            authors.value = "Error fetching details";
+            authors.value ="";
+            title.value ="";
+            publishers.value ="";
         }
     };
+    //window.onload = 
+    load_book_details(); 
+    document.getElementById('modified_isbn').oninput = load_book_details;
     """
     return Titled('Edit Book Recommendation', frm, Script(src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.1/fabric.min.js"), Script(js))
 

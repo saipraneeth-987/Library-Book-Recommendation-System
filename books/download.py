@@ -87,6 +87,6 @@ def download_stage2():
     return StreamingResponse(
         csv_file,
         media_type="text/csv",
-        headers={"Content-Disposition": "attachment; filename=booksdetails_complete.csv"}
+        headers={"Content-Disposition": "attachment; filename=booksdetails_stage2.csv"}
     )
 

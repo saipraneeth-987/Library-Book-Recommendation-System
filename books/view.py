@@ -38,23 +38,26 @@ def stage1(page: int = 1, sort_by: str = "date", order: str = "desc",search: str
         end_page = min(total_pages, visible_pages)
     if page > total_pages - half_visible:
         start_page = max(1, total_pages - visible_pages + 1)
-
     pagination_controls = Div(
         *(
             [
-                A("«", href=f"/?page={page - 1}&sort_by={sort_by}&order={order}&search={search}", style="margin-right: 10px;font-size: x-large;" + ("visibility: hidden;" if page == 1 else "visibility: visible;")),
+                A("«", href=f"/?page={page - 1}&sort_by={sort_by}&order={order}&search={search}&date_range={date_range}",
+                  style="margin-right: 10px;font-size: x-large;" +
+                  ("visibility: hidden;" if page == 1 else "visibility: visible;")),
             ]
             + [
                 A(
                     str(i),
-                    href=f"/?page={i}&sort_by={sort_by}&order={order}&search={search}",
-                    style="margin-right: 10px; text-decoration: none; font-size: x-large ; " +
+                    href=f"/?page={i}&sort_by={sort_by}&order={order}&search={search}&date_range={date_range}",
+                    style="margin-right: 10px; text-decoration: none; font-size: x-large; " +
                     ("font-weight: bold;" if i == page else "font-weight: normal;")
                 )
                 for i in range(start_page, end_page + 1)
             ]
             + [
-                A("»", href=f"/?page={page + 1}&sort_by={sort_by}&order={order}&search={search}", style="margin-left: 10px;font-size: x-large;" + ("visibility: hidden;" if page == total_pages else "visibility: visible;"))
+                A("»", href=f"/?page={page + 1}&sort_by={sort_by}&order={order}&search={search}&date_range={date_range}",
+                  style="margin-left: 10px;font-size: x-large;" +
+                  ("visibility: hidden;" if page == total_pages else "visibility: visible;"))
             ]
         ),
         style="margin-top: 10px; text-align: center;"
@@ -64,14 +67,18 @@ def stage1(page: int = 1, sort_by: str = "date", order: str = "desc",search: str
         if sort_by == column:
             return "▲" if order == "asc" else "▼"
         return "⇅"
-
     def create_sort_link(column):
-        # Set default order to "desc" if it's the first load (when order is not passed)
         new_order = "asc" if sort_by == column and order == "desc" else "desc"
-        return A(get_sort_icon(column), href=f"/?page={page}&sort_by={column}&order={new_order}&search={search}", style="text-decoration: none; font-size: small; margin-left: 5px;")
+        return A(
+            get_sort_icon(column),
+            href=f"/?page={page}&sort_by={column}&order={new_order}&search={search}&date_range={date_range}",
+            style="text-decoration: none; font-size: small; margin-left: 5px;"
+        )
+
 
     date_range_options = Form(
         Group(
+            Input(type="hidden", name="search", value=search),
             Input(type="radio", name="date_range", value="all", id="all", checked=(date_range == "all"),onchange="this.form.submit()"),
             Label("All", for_="all", style="margin-right: 10px;"),
             Input(type="radio", name="date_range", value="1month", id="1month", checked=(date_range == "1month"),onchange="this.form.submit()"),
@@ -116,6 +123,7 @@ def stage1(page: int = 1, sort_by: str = "date", order: str = "desc",search: str
     search_box = Form(
         Group(
             Input(type="text", name="search", value=search, placeholder="Search...", style="margin-right: 10px; padding: 5px;"),
+            Input(type="hidden", name="date_range", value=date_range), 
             Button("Search", type="submit", style="font-weight: 600;"),
             style="display: flex; align-items: center;"
         ),
@@ -191,19 +199,19 @@ def stage2(page: int = 1, sort_by: str = "date", order: str = "desc", search: st
     pagination_controls = Div(
         *(
             [
-                A("«", href=f"/stage2?page={page - 1}&sort_by={sort_by}&order={order}", style="margin-right: 10px;font-size: x-large;" + ("visibility: hidden;" if page == 1 else "visibility: visible;")),
+                A("«", href=f"/stage2?page={page - 1}&sort_by={sort_by}&order={order}&search={search}", style="margin-right: 10px;font-size: x-large;" + ("visibility: hidden;" if page == 1 else "visibility: visible;")),
             ]
             + [
                 A(
                     str(i),
-                    href=f"/stage2?page={i}&sort_by={sort_by}&order={order}",
+                    href=f"/stage2?page={i}&sort_by={sort_by}&order={order}&search={search}",
                     style="margin-right: 10px; text-decoration: none; font-size: x-large ; " +
                     ("font-weight: bold;" if i == page else "font-weight: normal;")
                 )
                 for i in range(start_page, end_page + 1)
             ]
             + [
-                A("»", href=f"/stage2?page={page + 1}&sort_by={sort_by}&order={order}", style="margin-left: 10px;font-size: x-large;" + ("visibility: hidden;" if page == total_pages else "visibility: visible;"))
+                A("»", href=f"/stage2?page={page + 1}&sort_by={sort_by}&order={order}&search={search}", style="margin-left: 10px;font-size: x-large;" + ("visibility: hidden;" if page == total_pages else "visibility: visible;"))
             ]
         ),
         style="margin-top: 10px; text-align: center;"
@@ -222,11 +230,14 @@ def stage2(page: int = 1, sort_by: str = "date", order: str = "desc", search: st
         if sort_by == column:
             return "▲" if order == "asc" else "▼"
         return "⇅"
-
     def create_sort_link(column):
-        # Set default order to "desc" if it's the first load (when order is not passed)
         new_order = "asc" if sort_by == column and order == "desc" else "desc"
-        return A(get_sort_icon(column), href=f"/stage2?page={page}&sort_by={column}&order={new_order}", style="text-decoration: none; font-size: small; margin-left: 5px;")
+
+        return A(
+            get_sort_icon(column),
+            href=f"/stage2?page={page}&sort_by={column}&order={new_order}&search={search}",
+            style="text-decoration: none; font-size: small; margin-left: 5px;"
+        )
 
     # Generate the table with sortable headers for "Date" and "Email"
     table = Table(

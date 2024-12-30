@@ -75,6 +75,7 @@ def filter_by_date(all_items, date_range):
     # Set the start date based on the selected date range
     if date_range == '1month':
         start_date = today - timedelta(days=30)
+        print(start_date)
     elif date_range == '3months':
         start_date = today - timedelta(days=90)
     elif date_range == '6months':
@@ -101,7 +102,7 @@ def home(page: int = 1, sort_by: str = "date", order: str = "desc",search: str =
     items_per_page = 10
     all_items = fetch_items_for_stage1()
     all_items = filter_by_date(all_items, date_range)
-
+    print(date_range)
     # Apply sorting only for 'date' and 'email' columns
     if sort_by in ["date", "email"]:
         reverse = order == "desc"
@@ -167,13 +168,13 @@ def home(page: int = 1, sort_by: str = "date", order: str = "desc",search: str =
 
     date_range_options = Form(
         Group(
-            Input(type="radio", name="date_range", value="all", id="all", checked=(date_range == "all")),
+            Input(type="radio", name="date_range", value="all", id="all", checked=(date_range == "all"),onchange="this.form.submit()"),
             Label("All", for_="all", style="margin-right: 10px;"),
-            Input(type="radio", name="date_range", value="1month", id="1month", checked=(date_range == "1month")),
+            Input(type="radio", name="date_range", value="1month", id="1month", checked=(date_range == "1month"),onchange="this.form.submit()"),
             Label("Last 1 Month", for_="1month", style="margin-right: 10px;"),
-            Input(type="radio", name="date_range", value="3months", id="3months", checked=(date_range == "3months")),
+            Input(type="radio", name="date_range", value="3months", id="3months", checked=(date_range == "3months"),onchange="this.form.submit()"),
             Label("Last 3 Months", for_="3months", style="margin-right: 10px;"),
-            Input(type="radio", name="date_range", value="6months", id="6months", checked=(date_range == "6months")),
+            Input(type="radio", name="date_range", value="6months", id="6months", checked=(date_range == "6months"),onchange="this.form.submit()"),
             Label("Last 6 Months", for_="6months"),
             style="margin-bottom: 20px; display: flex; align-items: center;"
         ),
@@ -771,41 +772,7 @@ async def edit_book(id: int):
     # Fill the form with existing data
     frm = fill_form(res,BookRecommendations[id] )
     js = """
-    window.onload = async function(){
-        const isbn = document.getElementById('modified_isbn').value;
-        console.log('Modified ISBN:', isbn);
-
-        const authors = document.getElementById('authors');
-        const title = document.getElementById('book_name');
-        const publishers = document.getElementById('publisher');
-        try {
-                const response =await fetch(`/api/get-book-details?isbn=${isbn}`);
-                console.log(response)
-                if (response.ok) {
-                    const data = await response.json();
-                    console.log(data)
-                    if (data.error) {
-                        authors.value = "";
-                        title.value = "";
-                        publishers.value = "";
-                    } else {
-                        console.log("came")
-                        console.log(data.authors)
-                        authors.value = data.authors || "Unknown Authors";
-                        title.value = data.title || "Unknown Title";
-                        publishers.value = data.publishers || "Unknown Publishers";
-                        }
-                    }
-                else {
-                    console.log("error in response")
-                    }
-                } catch (error) {
-                    authors.value ="";
-                    title.value ="";
-                    publishers.value ="";
-                }
-        }                       
-    document.getElementById('modified_isbn').oninput = async function () {
+    async function load_book_details(){
         const isbn = document.getElementById('modified_isbn').value; 
         console.log('Modified ISBN:', isbn); 
     
@@ -823,7 +790,7 @@ async def edit_book(id: int):
                     title.value = "";
                     publishers.value = "";
                 } else {
-                    console.log("came")
+                    console.log("found")
                     console.log(data.authors)
                     authors.value = data.authors || "Unknown Authors";
                     console.log(authors.value)
@@ -831,12 +798,20 @@ async def edit_book(id: int):
                     publishers.value = data.publishers || "Unknown Publishers";
                 }
             } else {
-                authors.value = `Error: ${response.status}`;
+                console.log("error in response");
+                authors.value ="";
+                title.value ="";
+                publishers.value ="";
             }
         } catch (error) {
-            authors.value = "Error fetching details";
+            authors.value ="";
+            title.value ="";
+            publishers.value ="";
         }
     };
+    //window.onload = 
+    load_book_details(); 
+    document.getElementById('modified_isbn').oninput = load_book_details;
     """
     return Titled('Edit Book Recommendation', frm, Script(src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.1/fabric.min.js"), Script(js))
 

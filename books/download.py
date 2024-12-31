@@ -90,3 +90,32 @@ def download_stage2():
         headers={"Content-Disposition": "attachment; filename=booksdetails_stage2.csv"}
     )
 
+def download_stage3():
+    csv_file = StringIO()
+    writer = csv.writer(csv_file)
+
+    # Write the header row for the CSV file
+    writer.writerow(["ISBN", "Name of Book", "Number of Copies", "Currency", "Cost in Currency","Cost in INR","Status","Approval Remarks", "Recent Action Date"])
+
+    # Connect to the SQLite database and fetch all items
+    connection = sqlite3.connect('data/library.db')
+    cursor = connection.cursor()
+    cursor.execute("SELECT isbn,book_name, number_of_copies, currency,cost_currency,cost_inr,status,approval_remarks,date_stage_update FROM items WHERE current_stage = 3 ")
+    items = cursor.fetchall()
+
+    # Write each item to the CSV file
+    for item in items:
+        writer.writerow(item)
+
+    # Close the database connection
+    connection.close()
+
+    # Reset the cursor to the beginning of the buffer
+    csv_file.seek(0)
+
+    # Return the CSV file as a streaming response for download
+    return StreamingResponse(
+        csv_file,
+        media_type="text/csv",
+        headers={"Content-Disposition": "attachment; filename=booksdetails_stage3.csv"}
+    )

@@ -53,3 +53,20 @@ def stage2():
 
     return items
 
+def stage3():
+    connection = sqlite3.connect('data/library.db')
+    cursor = connection.cursor()
+    cursor.execute("""
+        SELECT isbn, book_name, number_of_copies, currency, cost_currency,cost_inr, status, approval_remarks, date_stage_update,id
+        FROM items
+        WHERE current_stage = 3
+        ORDER BY date DESC
+    """)
+    items = cursor.fetchall()
+    connection.close()
+
+
+    # Sort by date in descending order after conversion
+    items.sort(key=lambda x: x[8] if x[8] is not None else "", reverse=True)
+
+    return items

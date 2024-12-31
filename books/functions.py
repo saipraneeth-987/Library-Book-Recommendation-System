@@ -10,11 +10,12 @@ import requests
 
 def update_stage(isbn: int, current_stage: int,new_stage: int):
     with sqlite3.connect('data/library.db') as connection:
+        current_time = datetime.now()
         cursor = connection.cursor()
         cursor.execute("SELECT id FROM items WHERE isbn = ? AND current_stage = ?", (isbn, current_stage))
         book= cursor.fetchone()
         if book:
-            cursor.execute("UPDATE items SET current_stage = ? WHERE isbn = ? AND current_stage = ?",(new_stage, isbn, current_stage))
+            cursor.execute("UPDATE items SET current_stage = ?,date_stage_update = ? WHERE isbn = ? AND current_stage = ?",(new_stage,current_time, isbn, current_stage))
         connection.commit()
 
 def get_book_details(isbn):
@@ -35,7 +36,7 @@ def get_book_details(isbn):
     else:
         return {f"Failed to fetch details: {response.status_code}"}
 
-def filter_by_date(all_items, date_range):
+def filter_by_date(all_items, date_range,stage):
     today = datetime.today()
     if date_range == '1month':
         start_date = today - timedelta(days=30)
@@ -46,11 +47,16 @@ def filter_by_date(all_items, date_range):
         start_date = today - timedelta(days=180)
     else:
         return all_items  
-
+    if stage == 1 :
+        i = 6
+    elif stage == 2 :
+        i = 15
+    elif stage == 3 :
+        i = 8
     filtered_items = []
     for item in all_items:
         try:
-            item_date = datetime.strptime(item[6], "%Y-%m-%d %H:%M:%S")
+            item_date = datetime.strptime(item[i], "%Y-%m-%d %H:%M:%S")
             if item_date >= start_date:
                 filtered_items.append(item)
         except Exception as e:

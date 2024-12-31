@@ -78,7 +78,7 @@ To help the librarian, we need to build a chhootu webpage that can help track al
 	* [ ] Get recommender name from email address via Gmail API. 
 
 * Stage 3: Submitted for Approval from Dean Academics (Stage = Approval pending)
-    - The invoice prepared in Stage 2 is emailed to Dean Academics who will approve or not approve.
+    - The invoice prepared in Stage 2 is emailed to Dean Academics who will approve or not approve. This stage prepares the relevant data.
     - Desirable information to be maintained and displayed in this stage are
         * ISBN (non editable, same as Modified ISBN from stage 2)
         * Title (non editable, from stage 2)
@@ -101,7 +101,8 @@ To help the librarian, we need to build a chhootu webpage that can help track al
 	* [ ] New field on stage. Stages can be one of Initiated, Processing, Duplicate, Cancelled, Approved, Under enquiry, Ordered, Received, Processed, Not available.
 	 
 * Stage 4: Approved (Stage = Approved)
-    - If approved, the book moves to the next stage. If not, the process ends here.
+    - All the approved books from the previous stage comes here.
+    - If approved, the book moves to the next stage. If not, the process ends here
     - Desirable information to be maintained and displayed in this stage are
 	* All details from stage 3
         * Status of approval from Dean academics (editable, dropdown - Approved/Not approved). Default value: Approved
@@ -113,14 +114,17 @@ To help the librarian, we need to build a chhootu webpage that can help track al
 	* [ ] Requests need not be shown as clubbed anymore.
 
 * Stage 5: Book acquisition  (Stage = Under enquiry)
+    - Librarian has placed the request to get book quotes with sellers for availability.
     - Desirable information to be maintained and displayed in this stage are
 	* All details from stage 4. All are not editable.
-	* Supplier information (editable, text, mandatory)
+	* Book is available / not available (editable, dropdown, Yes/No)
+	* Supplier information (editable, text, mandatory if book is available)
         * Remarks (editable, specific for stage 5 (don't copy from stage 4))
     - Desirable features	
 	* [X] Ability to download all the titles in this stage as a CSV
 
 * Stage 6: Order placed (Stage = ordered)
+    - Order is placed with the supplier.
     - Desirable information to be maintained and displayed in this stage are
 	* All details from stage 5. **All details must be editable**
         * Remarks (editable, specific for stage 6 (don't copy from stage 5))
@@ -134,6 +138,7 @@ To help the librarian, we need to build a chhootu webpage that can help track al
         * Remarks (editable, specific for stage 7 (don't copy from stage 6))
 
 * Stage 8: Our for circulation (stage = Processed)
+    - The book is now in circulation.
     - Desirable information to be maintained and displayed in this stage are
         * All details from stage 7. All are not editable.
         * Remarks (editable, specific for stage 8 (don't copy from stage 7))
@@ -148,7 +153,14 @@ To help the librarian, we need to build a chhootu webpage that can help track al
     - Contains books that have been cancelled due to accidental duplicates in google form.
     - [ ] Should allow move back to stage 1.
 
-
+* Global search
+    - Link to search functioanlity must  appear in all pages.
+    - [ ] A separate page to find the status of a book based on
+	* ISBN and
+	* Recommender and
+	* Title
+    - [ ] If a field is empty, do not use it in search.
+    - [ ] The search should display all the info that is matching.
 
 ## Implementation ##
 You can assume that the list of new books is given as a CSV file (sample

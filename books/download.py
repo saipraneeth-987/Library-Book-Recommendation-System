@@ -95,12 +95,12 @@ def download_stage3():
     writer = csv.writer(csv_file)
 
     # Write the header row for the CSV file
-    writer.writerow(["ISBN", "Name of Book", "Number of Copies", "Currency", "Cost in Currency","Cost in INR","Status","Approval Remarks", "Recent Action Date"])
+    writer.writerow(["ID","ISBN", "Name of Book", "Number of Copies", "Currency", "Cost in Currency","Cost in INR","Status","Approval Remarks", "Recent Action Date"])
 
     # Connect to the SQLite database and fetch all items
     connection = sqlite3.connect('data/library.db')
     cursor = connection.cursor()
-    cursor.execute("SELECT isbn,book_name, number_of_copies, currency,cost_currency,cost_inr,status,approval_remarks,date_stage_update FROM items WHERE current_stage = 3 ")
+    cursor.execute("SELECT id,isbn,book_name, number_of_copies, currency,cost_currency,cost_inr,status,approval_remarks,date_stage_update FROM items WHERE current_stage = 3 ")
     items = cursor.fetchall()
 
     # Write each item to the CSV file

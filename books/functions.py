@@ -56,7 +56,10 @@ def filter_by_date(all_items, date_range,stage):
     filtered_items = []
     for item in all_items:
         try:
-            item_date = datetime.strptime(item[i], "%Y-%m-%d %H:%M:%S")
+            if i == 8:
+                item_date = datetime.strptime(item[i], "%Y-%m-%d %H:%M:%S.%f")
+            else:
+                item_date = datetime.strptime(item[i], "%Y-%m-%d %H:%M:%S")
             if item_date >= start_date:
                 filtered_items.append(item)
         except Exception as e:

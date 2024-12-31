@@ -30,8 +30,9 @@ To help the librarian, we need to build a chhootu webpage that can help track al
 	* [X] At the beginning of the page for stage 1, explain what the stage does (as a small description para).
     	* [X] Display this information as table with appropriate headers. 
 	* [X] Make the data sortable by the date column. 
+	* [X] Ability to select entries based on date (1 month, 3 month and so on)
 	* [X] After the description of the page, add a button which upon clicking moves the entries whose checkbox are selected over to stage 2.
-	* [ ] New field on stage. Stages can be one of Initiated, Processing, Duplicate, Cancelled, Approved, Under enquiry, Ordered, Received, Processed, Not available.
+	* [ ] New field on stage. Stages can be one of Initiated, Processing, Duplicate, Approved, Under enquiry, Ordered, Received, Processed, Not available.
 
 * Stage 2: Processing (Stage = Processing)
     - The librarian takes the newly recommended books and finds the correct
@@ -62,18 +63,16 @@ To help the librarian, we need to build a chhootu webpage that can help track al
 	* [X] Ability to sort based on email and date column
 	* [X] Pagination of data displayed. Display max 10 books.
 	* [ ] Ability to also list first 20, 50 and 100 books (in addition to pagination)
-	* [X] Once the Modified ISBN is entered, use public service API (openisbn) and fetch the book title name, authors and the publisher information.
+	* [X] Once the Modified ISBN is entered, use public service API (openlibrary) and fetch the book title name, authors and the publisher information.
 	* [ ] Z39.50 based [library data access](https://wiki.koha-community.org/wiki/Configure_Z39.50/SRU_targets) or Google Books [API](https://developers.google.com/books/docs/v1/using). Google books requires an API key.
 	* [X] Download of books specific to a given stage.
-	* [ ] While filling details, show error message if mandatory fields are
-	  not entered during submission.
-	* [ ] Color code fields that are editable (as green) and those that are
-	  not editable (as red)
+	* [ ] While filling details, show error message if mandatory fields are not entered during submission.
+	* [ ] Color code fields that are editable (as green) and those that are not editable (as red)
 	* [ ] Give star in front of fields that are mandatory
-	* [ ] New field on stage. Stages can be one of Initiated, Processing, Duplicate, Cancelled, Approval pending, Under enquiry, Ordered, Received, Processed, Not available.
+	* [ ] New field on stage. Stages can be one of Initiated, Processing, Duplicate, Approval pending, Under enquiry, Ordered, Received, Processed, Not available.
 	* [ ] For books that are already available (the "Book available ?" field marked as yes), add an option to move the entry to a new stage called "Duplicate".
-	* [ ] For certain entries that were multiply submitted (accidently in the google form) needs to be "Cancelled". There must be an option to cancel them in stage 2 alone. Once cancelled this will be moved to Cancelled stage.
-	* [ ] New field on stage. Stages can be one of Initiated, Processing, Duplicate, Cancelled, Approval pending, Under enquiry, Ordered,	Received, Processed, Not available.
+	* [ ] For certain entries that were multiply submitted (accidently in the google form) needs to be "Duplicate".
+	* [ ] New field on stage. Stages can be one of Initiated, Processing, Duplicate, Approval pending, Under enquiry, Ordered,	Received, Processed, Not available.
 	* [ ] New field on Edition/Year. 
 	* [ ] Get recommender name from email address via Gmail API. 
 
@@ -91,6 +90,7 @@ To help the librarian, we need to build a chhootu webpage that can help track al
         * Recommender (non editable, from stage 1)
         * Purpose of recommendation (non editable, from stage 2)
         * Cost in currency (non editable, from stage 2)
+        * Status of approval from Dean academics (editable, dropdown - Pending/Approved/Not approved). Default value: Pending
         * Date on which stage 2 is completed (non editable, autocalculated based on when stage 1 is completed)
         * Remarks (editable, specific for stage 3 (don't copy from stage 2))
     - Desirable features
@@ -98,18 +98,18 @@ To help the librarian, we need to build a chhootu webpage that can help track al
 	  - [ ] Ability to select a non-empty subset of requests clubbed together and move them together as one entity to the next stage for approval. Possibly do this via a check box.
 	  - [ ] The books that are clubbed together must be displayed together.
 	  - [ ] For the selected books, a text message needs to be generated in a certain format (Format given in `bulk.docx`)
-	* [ ] New field on stage. Stages can be one of Initiated, Processing, Duplicate, Cancelled, Approved, Under enquiry, Ordered, Received, Processed, Not available.
+	* [ ] New field on stage. Stages can be one of Initiated, Processing, Duplicate, Approved, Under enquiry, Ordered, Received, Processed, Not available.
 	 
 * Stage 4: Approved (Stage = Approved)
     - All the approved books from the previous stage comes here.
     - If approved, the book moves to the next stage. If not, the process ends here
     - Desirable information to be maintained and displayed in this stage are
 	* All details from stage 3
-        * Status of approval from Dean academics (editable, dropdown - Approved/Not approved). Default value: Approved
+        * Status of approval from Dean academics (not editable, dropdown - Approved/Not approved). Default value: Approved
         * Remarks (editable, specific for stage 4 (don't copy from stage 3))
     - Desirable features
-	* [ ] New field on stage. Stages can be one of Initiated, Processing, Duplicate, Cancelled, Approved, Under enquiry, Ordered, Received, Processed, Not available.
-	* [ ] Books that are not approved must be moved to cancelled stage. Move to cancelled stage must be enabled if the status is not approved.
+	* [ ] New field on stage. Stages can be one of Initiated, Processing, Duplicate, Approved, Under enquiry, Ordered, Received, Processed, Not available, Not approved.
+	* [ ] Books that are not approved must be moved to Not approved stage. Move to Not approved stage must be enabled if the status is not approved.
 	* [ ] Books that are approved must be allowed to move to the next stage.
 	* [ ] Requests need not be shown as clubbed anymore.
 
@@ -122,6 +122,7 @@ To help the librarian, we need to build a chhootu webpage that can help track al
         * Remarks (editable, specific for stage 5 (don't copy from stage 4))
     - Desirable features	
 	* [X] Ability to download all the titles in this stage as a CSV
+	* [ ] If the book is available field is yes, move to the next stage. Else move to the "Not available" stage.
 
 * Stage 6: Order placed (Stage = ordered)
     - Order is placed with the supplier.
@@ -129,7 +130,7 @@ To help the librarian, we need to build a chhootu webpage that can help track al
 	* All details from stage 5. **All details must be editable**
         * Remarks (editable, specific for stage 6 (don't copy from stage 5))
     - Desirable features	
-	* [ ] Ability to download all the titles with the info "Title, Subtitle, Author, Publisher, ISBN, Edition/Year, Price, No of copies" as a CSV.
+	* [X] Ability to download all the titles with the info "Title, Subtitle, Author, Publisher, ISBN, Edition/Year, Price, No of copies" as a CSV.
 
 * Stage 7: Received (stage = Received)
     - The book has arrived in the library. The books bundle needs to be opened and proper cataloging needs to be done.
@@ -143,7 +144,7 @@ To help the librarian, we need to build a chhootu webpage that can help track al
         * All details from stage 7. All are not editable.
         * Remarks (editable, specific for stage 8 (don't copy from stage 7))
 
-* Stage Cancelled (stage = Cancelled)
+* Stage Not approved (stage = Not approved)
     - Contains all those books that are not approved by Dean acads.
     - Should display all the usual information.
     - [ ] Should allow move back to stage 3.
@@ -153,14 +154,21 @@ To help the librarian, we need to build a chhootu webpage that can help track al
     - Contains books that have been cancelled due to accidental duplicates in google form.
     - [ ] Should allow move back to stage 1.
 
+* Stage Not available (stage = Not available)
+    - Should display all the usual information.
+    - Contains books that is not available with the book vendors.
+    - [ ] Should allow move back to stage 5.
+
+
 * Global search
-    - Link to search functioanlity must  appear in all pages.
+    - Link to search functionality must  appear in all pages.
     - [ ] A separate page to find the status of a book based on
 	* ISBN and
 	* Recommender and
 	* Title
     - [ ] If a field is empty, do not use it in search.
     - [ ] The search should display all the info that is matching.
+    - [ ] Ability to download data as csv
 
 ## Implementation ##
 You can assume that the list of new books is given as a CSV file (sample

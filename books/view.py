@@ -7,7 +7,7 @@ items_per_page = 10
 
 def stage1(page: int = 1, sort_by: str = "date", order: str = "desc",search: str = "", date_range: str = "all"):
     all_items = fetch.stage1()
-    all_items = functions.filter_by_date(all_items, date_range)
+    all_items = functions.filter_by_date(all_items, date_range,1)
     # Apply sorting only for 'date' and 'email' columns
     if sort_by in ["date", "email"]:
         reverse = order == "desc"
@@ -162,10 +162,10 @@ def stage1(page: int = 1, sort_by: str = "date", order: str = "desc",search: str
     )
     return Titled('Book Recommendations', card)
 
-def stage2(page: int = 1, sort_by: str = "date", order: str = "desc", search: str= ""):
+def stage2(page: int = 1, sort_by: str = "date", order: str = "desc", search: str= "",date_range:str ="all" ):
     items_per_page = 10
     all_items = fetch.stage2()
-
+    all_items = functions.filter_by_date(all_items, date_range,2)
     if search:
         search_lower = search.lower()
         all_items = [
@@ -199,19 +199,19 @@ def stage2(page: int = 1, sort_by: str = "date", order: str = "desc", search: st
     pagination_controls = Div(
         *(
             [
-                A("«", href=f"/stage2?page={page - 1}&sort_by={sort_by}&order={order}&search={search}", style="margin-right: 10px;font-size: x-large;" + ("visibility: hidden;" if page == 1 else "visibility: visible;")),
+                A("«", href=f"/stage2?page={page - 1}&sort_by={sort_by}&order={order}&search={search}&date_range={date_range}", style="margin-right: 10px;font-size: x-large;" + ("visibility: hidden;" if page == 1 else "visibility: visible;")),
             ]
             + [
                 A(
                     str(i),
-                    href=f"/stage2?page={i}&sort_by={sort_by}&order={order}&search={search}",
+                    href=f"/stage2?page={i}&sort_by={sort_by}&order={order}&search={search}&date_range={date_range}",
                     style="margin-right: 10px; text-decoration: none; font-size: x-large ; " +
                     ("font-weight: bold;" if i == page else "font-weight: normal;")
                 )
                 for i in range(start_page, end_page + 1)
             ]
             + [
-                A("»", href=f"/stage2?page={page + 1}&sort_by={sort_by}&order={order}&search={search}", style="margin-left: 10px;font-size: x-large;" + ("visibility: hidden;" if page == total_pages else "visibility: visible;"))
+                A("»", href=f"/stage2?page={page + 1}&sort_by={sort_by}&order={order}&search={search}&date_range={date_range}", style="margin-left: 10px;font-size: x-large;" + ("visibility: hidden;" if page == total_pages else "visibility: visible;"))
             ]
         ),
         style="margin-top: 10px; text-align: center;"
@@ -219,6 +219,7 @@ def stage2(page: int = 1, sort_by: str = "date", order: str = "desc", search: st
 
     search_box = Form(
         Group(
+            Input(type="hidden", name="date_range", value=date_range),
             Input(type="text", name="search", value=search, placeholder="Search...", style="margin-right: 10px; padding: 5px;"),
             Button("Search", type="submit", style="font-weight: 600;"),
             style="display: flex; align-items: center;"
@@ -235,9 +236,25 @@ def stage2(page: int = 1, sort_by: str = "date", order: str = "desc", search: st
 
         return A(
             get_sort_icon(column),
-            href=f"/stage2?page={page}&sort_by={column}&order={new_order}&search={search}",
+            href=f"/stage2?page={page}&sort_by={column}&order={new_order}&search={search}&date_range={date_range}",
             style="text-decoration: none; font-size: small; margin-left: 5px;"
         )
+
+    date_range_options = Form(
+        Group(
+            Input(type="hidden", name="search", value=search),
+            Input(type="radio", name="date_range", value="all", id="all", checked=(date_range == "all"),onchange="this.form.submit()"),
+            Label("All", for_="all", style="margin-right: 10px;"),
+            Input(type="radio", name="date_range", value="1month", id="1month", checked=(date_range == "1month"),onchange="this.form.submit()"),
+            Label("Last 1 Month", for_="1month", style="margin-right: 10px;"),
+            Input(type="radio", name="date_range", value="3months", id="3months", checked=(date_range == "3months"),onchange="this.form.submit()"),
+            Label("Last 3 Months", for_="3months", style="margin-right: 10px;"),
+            Input(type="radio", name="date_range", value="6months", id="6months", checked=(date_range == "6months"),onchange="this.form.submit()"),
+            Label("Last 6 Months", for_="6months"),
+            style="margin-bottom: 20px; display: flex; align-items: center;"
+        ),
+        action="/stage2", method="get"
+    )
 
     # Generate the table with sortable headers for "Date" and "Email"
     table = Table(
@@ -296,6 +313,7 @@ def stage2(page: int = 1, sort_by: str = "date", order: str = "desc", search: st
         H6("In this can edit the book details like the modified isbn and other . This can be done by collecting those details from the amazon,google etc "),
         H6("ISBN,Recommender,email,date all these are not editable and remaining are editable."),
         search_box,
+        date_range_options,
         table,  # Display the table
         pagination_controls,  # Add pagination controls
         header=Div(
@@ -460,3 +478,214 @@ async def edit_in_stage2(id: int):
     """
     return (res,js)
 
+def stage3(page: int = 1, sort_by: str = "date_stage_update", order: str = "asc", search: str = "", date_range: str = "all"):
+    all_items = fetch.stage3()
+    all_items = functions.filter_by_date(all_items, date_range,3)
+    # Apply search filter
+    if search:
+        search_lower = search.lower()
+        all_items = [
+            item for item in all_items
+            if any(search_lower in str(value).lower() for value in item)
+        ]
+
+    # Sorting logic
+    if sort_by in ["date_stage_update", "date_stage2_completed"]:
+        reverse = order == "desc"
+        column_index = {
+            "date_stage_update": 8,
+            "date_stage2_completed": 8
+        }.get(sort_by, 8)  # Default to index 8 if sort_by isn't found
+        all_items.sort(key=lambda x: (x[column_index] is None, x[column_index]), reverse=reverse)
+
+    # Pagination calculations
+    total_items = len(all_items)
+    total_pages = (total_items + items_per_page - 1) // items_per_page
+    start_index = (page - 1) * items_per_page
+    end_index = start_index + items_per_page
+    current_page_items = all_items[start_index:end_index]
+
+    # Pagination controls
+    visible_pages = 5
+    half_visible = visible_pages // 2
+    start_page = max(1, page - half_visible)
+    end_page = min(total_pages, page + half_visible)
+
+    if page <= half_visible:
+        end_page = min(total_pages, visible_pages)
+    if page > total_pages - half_visible:
+        start_page = max(1, total_pages - visible_pages + 1)
+
+    pagination_controls = Div(
+        *(
+            [
+                A("«", href=f"/stage3?page={page - 1}&sort_by={sort_by}&order={order}&search={search}&date_range={date_range}",
+                  style="margin-right: 10px;font-size: x-large;" +
+                        ("visibility: hidden;" if page == 1 else "visibility: visible;")),
+            ]
+            + [
+                A(
+                    str(i),
+                    href=f"/stage3?page={i}&sort_by={sort_by}&order={order}&search={search}&date_range={date_range}",
+                    style="margin-right: 10px; text-decoration: none; font-size: x-large ; " +
+                          ("font-weight: bold;" if i == page else "font-weight: normal;")
+                )
+                for i in range(start_page, end_page + 1)
+            ]
+            + [
+                A("»", href=f"/stage3?page={page + 1}&sort_by={sort_by}&order={order}&search={search}&date_range={date_range}",
+                  style="margin-left: 10px;font-size: x-large;" +
+                        ("visibility: hidden;" if page == total_pages else "visibility: visible;"))
+            ]
+        ),
+        style="margin-top: 10px; text-align: center;"
+    )
+    search_box = Form(
+        Group(
+            Input(type="text", name="search", value=search, placeholder="Search...", style="margin-right: 10px; padding: 5px;"),
+            Input(type="hidden", name="date_range", value=date_range),
+            Button("Search", type="submit", style="font-weight: 600;"),
+            style="display: flex; align-items: center;"
+        ),
+        action="/stage3", method="get"
+    )
+    def get_sort_icon(column):
+        if sort_by == column:
+            return "▲" if order == "asc" else "▼"
+        return "⇅"
+
+    def create_sort_link(column):
+        new_order = "asc" if sort_by == column and order == "desc" else "desc"
+        return A(get_sort_icon(column),
+                 href=f"/stage3?page={page}&sort_by={column}&order={new_order}&search={search}&date_range={date_range}",
+                 style="text-decoration: none; font-size: small; margin-left: 5px;")
+    date_range_options = Form(
+        Group(
+            Input(type="hidden", name="search", value=search),
+            Input(type="radio", name="date_range", value="all", id="all", checked=(date_range == "all"),onchange="this.form.submit()"),
+            Label("All", for_="all", style="margin-right: 10px;"),
+            Input(type="radio", name="date_range", value="1month", id="1month", checked=(date_range == "1month"),onchange="this.form.submit()"),
+            Label("Last 1 Month", for_="1month", style="margin-right: 10px;"),
+            Input(type="radio", name="date_range", value="3months", id="3months", checked=(date_range == "3months"),onchange="this.form.submit()"),
+            Label("Last 3 Months", for_="3months", style="margin-right: 10px;"),
+            Input(type="radio", name="date_range", value="6months", id="6months", checked=(date_range == "6months"),onchange="this.form.submit()"),
+            Label("Last 6 Months", for_="6months"),
+            style="margin-bottom: 20px; display: flex; align-items: center;"
+        ),
+        action="/stage3", method="get"
+    )
+    table = Table(
+        Tr(
+            Th(Div("ISBN", style="display: inline-flex; align-items: center; font-weight: 1000;")),
+            Th("Name of Book", style="font-weight: 1000; text-align: center;"),
+            Th("Number of Copies", style="font-weight: 1000; text-align: center;"),
+            Th("Currency", style="font-weight: 1000; text-align: center;"),
+            Th("Cost in Currency", style="font-weight: 1000; text-align: center;"),
+            Th("Cost in INR", style="font-weight: 1000; text-align: center;"),
+            Th("Approval Status", style="font-weight: 1000; text-align: center;"),
+            Th("Approval Remarks", style="font-weight: 1000; text-align: center;"),
+            Th(Div("Date Stage 2 Completed", create_sort_link("date_stage_update"),
+                   style="display: inline-flex; align-items: center; font-weight: 1000;")),
+            Th("Action", style="font-weight: 1000; text-align: center;"),
+        ),
+        *[
+            Tr(
+                Td(item[0], style="font-size: smaller; padding: 4px;"),
+                Td(item[1], style="font-size: smaller; padding: 4px;"),
+                Td(item[2], style="font-size: smaller; padding: 4px;"),
+                Td(item[3], style="font-size: smaller; padding: 4px;"),
+                Td(item[4], style="font-size: smaller; padding: 4px;"),
+                Td(item[5], style="font-size: smaller; padding: 4px; "),
+                Td(item[6], style="font-size: smaller; padding: 4px;"),
+                Td(item[7], style="font-size: smaller; padding: 4px;"),
+                Td(item[8], style="font-size: smaller; padding: 4px;maxwidth: 500px"),
+                Td(
+                    A("Edit", href=f"/edit-book_stage3/{item[9]}", style="display:block;font-size: smaller;margin-bottom:3px; width:130px"),
+                    A("Move to Stage 4", href=f"/move_to_stage4_from_stage3/{item[0]}", style="display:block;font-size: smaller;margin-bottom:3px"),
+                    A("Move to Stage 2", href=f"/move_to_stage2_from_stage3/{item[0]}", style="display:block;font-size: smaller;")
+                )
+            )
+            for item in current_page_items
+            if print(f"item[9]: {item[9]}") or True
+        ],
+        style="border-collapse: collapse; width: 100%;",
+        **{"border": "1"}
+    )
+
+    card = Card(
+        H3("Stage 3"),
+        H6("This displays the details for Stage 3, including editable fields like cost, currency, and remarks."),
+        search_box,
+        date_range_options,
+        table,
+        pagination_controls,
+        header=Div(
+            A("Stage 1", href="/", role="button", style="margin-left: 10px; white-space: nowrap ; height:50px; font-weight: 700;"),
+            A("Stage 2", href="/stage2", role="button", style="margin-left: 10px; white-space: nowrap ; height:50px; font-weight: 700;"),
+            A("Stage 4", href="/stage4", role="button", style="margin-left: 10px; white-space: nowrap ; height:50px; font-weight: 700;"),
+            A("Stage 5", href="/stage5", role="button", style="margin-left: 10px; white-space: nowrap ; height:50px; font-weight: 700;"),
+            A("Stage 6", href="/stage6", role="button", style="margin-left: 10px; white-space: nowrap ; height:50px; font-weight: 700;"),
+            A("Download All", href="/downloadentire", role="button", style="margin-left: 10px; white-space: nowrap ; height:50px; font-weight: 700;"),
+            A("Download Stage3", href="/downloadstage3", role="button", style="margin-left: 10px; white-space: nowrap ; height:50px; font-weight: 700;"),
+            style="display: flex; gap: 10px;"  # Flexbox for layout
+        )
+    )
+    return Titled('Book Recommendations - Stage 3', card)
+
+async def edit_in_stage3(id: int):
+    res = Form(
+        Button("Save", role="button", style="margin-bottom: 15px;"),
+        A('Back', href='/stage3', role="button", style="margin:15px"),
+
+        Group(
+            H6("ISBN", style="margin-right: 10px; min-width: 60px; text-align: left; color: #53B6AC"),
+            Input(id="isbn", readonly=True, style ="border:1px solid #588C87"),  # Fetch ISBN from the stored data
+            style="display: flex; align-items: center; gap: 10px;"
+        ),
+
+        Group(
+            H6("Book Name", style="margin-right: 10px; min-width: 60px; text-align: left; color: #53B6AC"),
+            Input(id="book_name", readonly=True, style ="border:1px solid #588C87"),  # Fetch ISBN from the stored data
+            style="display: flex; align-items: center; gap: 10px;"
+        ),
+        Group(
+            H6("Number of copies", style="margin-right: 10px; min-width: 60px; text-align: left;"),
+            Input(id="number_of_copies", type="number"),
+            style="display: flex; align-items: center; gap: 10px;"
+        ),
+        Group(
+            H6("currency", style="margin-right: 10px; min-width: 60px; text-align: left;"),
+            Input(id="currency"),
+            style="display: flex; align-items: center; gap: 10px;"
+        ),
+        Group(
+            H6("cost in currency", style="margin-right: 10px; min-width: 60px; text-align: left;"),
+            Input(id="cost_currency", type="number"),
+            style="display: flex; align-items: center; gap: 10px;"
+        ),
+        Group(
+            H6("Cost in INR", style="margin-right: 10px; min-width: 60px; text-align: left;"),
+            Input(id="cost_inr", type="number"),
+            style="display: flex; align-items: center; gap: 10px;"
+        ),
+        Group(
+            H6("Status", style="margin-right: 10px; min-width: 60px; text-align: left;"),
+            Select(
+                Option("Select Status", value="", disabled=True, selected=True),
+                Option("Approved", value="approved"),
+                Option("Rejected", value="rejected"),
+                id="status",
+                style="padding: 5px; min-width: 120px;"
+            ),
+            style="display: flex; align-items: center; gap: 10px;"
+        ),
+
+        Group(
+            H6("Approval Remarks", style="margin-right: 10px; min-width: 60px; text-align: left;"),
+            Input(id="approval_remarks"),
+            style="display: flex; align-items: center; gap: 10px;"
+        ),
+        action="/update-bookstage3", id="edit", method='post'
+
+    )
+    return res

@@ -34,6 +34,7 @@ app, rt, BookRecommendations, BookRecommendation = fast_app(
     total_cost=int,
     approval_remarks=str,
     current_stage=int,
+    date_stage_update = datetime,
     pk='id',  # Primary key field (id will be automatically generated)
 )
 
@@ -66,8 +67,8 @@ async def restore_data(backup_file: UploadFile):
 
 
 @app.get("/stage2")
-def stage2(page: int = 1, sort_by: str = "date", order: str = "desc", search: str= ""):
-    return view.stage2(page,sort_by,order,search)
+def stage2(page: int = 1, sort_by: str = "date", order: str = "desc", search: str= "", date_range: str = "all"):
+    return view.stage2(page,sort_by,order,search,date_range)
 
 @app.get("/downloadstage2")
 def download_csv():
@@ -76,12 +77,12 @@ def download_csv():
 @app.get("/move_to_stage1_from_stage2/{isbn}")
 def move_to_stage2(isbn: int):
     functions.update_stage(isbn,2,1)
-    return RedirectResponse("/stage2", status_code=302)
+    return RedirectResponse("/", status_code=302)
 
 @app.get("/move_to_stage3_from_stage2/{isbn}")
 def move_to_stage2(isbn: int):
     functions.update_stage(isbn,2,3)
-    return RedirectResponse("/stage2", status_code=302)
+    return RedirectResponse("/stage3", status_code=302)
 
 @app.get("/edit-book/{id}")
 async def edit_book(id: int):
@@ -150,8 +151,73 @@ def update_bookstage2(isbn: int,
     return RedirectResponse(url="/stage2", status_code=302)
 
 @app.get("/stage3")
-def stage3():
-    return "<h1>This is Stage3</h1>"
+def stage3(page: int = 1, sort_by: str = "date_stage_update", order: str = "desc", search: str= "", date_range: str = "all"):
+    return view.stage3(page,sort_by,order,search,date_range)
+
+@app.get("/downloadstage2")
+def download_csv():
+    return download.download_stage3()
+
+@app.get("/move_to_stage4_from_stage3/{isbn}")
+def move_to_stage4_from_stage3(isbn: int):
+    functions.update_stage(isbn,3,4)
+    
+    return RedirectResponse("/stage4", status_code=302)
+    
+
+@app.get("/move_to_stage2_from_stage3/{isbn}")
+def move_to_stage2_from_stage3(isbn: int):
+    functions.update_stage(isbn,3,2)
+    
+    return RedirectResponse("/stage2", status_code=302)
+    
+
+@app.get("/edit-book_stage3/{id}")
+async def edit_book(id: int):
+    print(id)
+    res = await view.edit_in_stage3(id)
+    frm = fill_form(res,BookRecommendations[id] )
+    return Titled('Edit Book Recommendation', frm)
+
+@app.post("/update-bookstage3")
+def update_bookstage3(isbn: int, 
+                      number_of_copies : int, 
+                      currency: str, 
+                      cost_currency: float, 
+                      cost_inr: float, 
+                      status: str,
+                      approval_remarks: str
+                      ):
+    
+    connection = sqlite3.connect('data/library.db')
+    cursor = connection.cursor()
+
+    try:
+        # Update the book details in the database
+        cursor.execute("""
+            UPDATE items
+            SET  
+                number_of_copies =?,  
+                currency = ?, 
+                cost_currency = ?, 
+                cost_inr = ?, 
+                status = ?,
+                approval_remarks = ?
+            WHERE 
+                isbn = ? AND 
+                current_stage = 3
+        """, ( number_of_copies,  currency, cost_currency, cost_inr, status,approval_remarks, isbn))
+        connection.commit()
+        if cursor.rowcount == 0:
+            return {"error": f"No book found with ISBN {isbn} to update."}
+    except sqlite3.Error as e:
+        # Rollback the transaction in case of error
+        connection.rollback()
+        return {"error": f"Database error: {str(e)}"}
+    
+    finally:
+        connection.close()
+    return RedirectResponse(url="/stage3", status_code=302)
 
 @app.get("/stage4")
 def stage4():

@@ -10,12 +10,13 @@ import requests
 
 def update_stage(isbn: int, current_stage: int,new_stage: int):
     with sqlite3.connect('data/library.db') as connection:
-        current_time = datetime.now()
         cursor = connection.cursor()
+        current_time = datetime.now()
         cursor.execute("SELECT id FROM items WHERE isbn = ? AND current_stage = ?", (isbn, current_stage))
         book= cursor.fetchone()
         if book:
             cursor.execute("UPDATE items SET current_stage = ?,date_stage_update = ? WHERE isbn = ? AND current_stage = ?",(new_stage,current_time, isbn, current_stage))
+    
         connection.commit()
 
 def get_book_details(isbn):
@@ -36,7 +37,7 @@ def get_book_details(isbn):
     else:
         return {f"Failed to fetch details: {response.status_code}"}
 
-def filter_by_date(all_items, date_range,stage):
+def filter_by_date(all_items, date_range):
     today = datetime.today()
     if date_range == '1month':
         start_date = today - timedelta(days=30)
@@ -47,25 +48,64 @@ def filter_by_date(all_items, date_range,stage):
         start_date = today - timedelta(days=180)
     else:
         return all_items  
-    if stage == 1 :
-        i = 6
-    elif stage == 2 :
-        i = 15
-    elif stage == 3 :
-        i = 8
+
     filtered_items = []
     for item in all_items:
         try:
-            if i == 8:
-                item_date = datetime.strptime(item[i], "%Y-%m-%d %H:%M:%S.%f")
-            else:
-                item_date = datetime.strptime(item[i], "%Y-%m-%d %H:%M:%S")
+            item_date = datetime.strptime(item[6], "%Y-%m-%d %H:%M:%S")
             if item_date >= start_date:
                 filtered_items.append(item)
         except Exception as e:
             print(f"Error parsing date for item: {item} - {e}")
             continue
     return filtered_items
+
+def filter_by_date2(all_items, date_range):
+    today = datetime.today()
+    if date_range == '1month':
+        start_date = today - timedelta(days=30)
+        print(start_date)
+    elif date_range == '3months':
+        start_date = today - timedelta(days=90)
+    elif date_range == '6months':
+        start_date = today - timedelta(days=180)
+    else:
+        return all_items  
+
+    filtered_items = []
+    for item in all_items:
+        try:
+            item_date = datetime.strptime(item[15], "%Y-%m-%d %H:%M:%S")
+            if item_date >= start_date:
+                filtered_items.append(item)
+        except Exception as e:
+            print(f"Error parsing date for item: {item} - {e}")
+            continue
+    return filtered_items
+
+def filter_by_date3(all_items, date_range):
+    today = datetime.today()
+    if date_range == '1month':
+        start_date = today - timedelta(days=30)
+        print(start_date)
+    elif date_range == '3months':
+        start_date = today - timedelta(days=90)
+    elif date_range == '6months':
+        start_date = today - timedelta(days=180)
+    else:
+        return all_items  
+
+    filtered_items = []
+    for item in all_items:
+        try:
+            item_date = datetime.strptime(item[14], "%Y-%m-%d %H:%M:%S.%f")
+            if item_date >= start_date:
+                filtered_items.append(item)
+        except Exception as e:
+            print(f"Error parsing date for item: {item} - {e}")
+            continue
+    return filtered_items
+
 
 async def load(backup_file: UploadFile):
     contents = await backup_file.read()
@@ -104,12 +144,12 @@ async def load(backup_file: UploadFile):
 
     insert_query = """
     INSERT OR IGNORE INTO items 
-    (isbn, recommender, email, number_of_copies, purpose, remarks, date,modified_isbn, current_stage) 
-    VALUES (?, ?, ?, ?, ?, ?, ?,?, 1)
+    (isbn, recommender, email, number_of_copies, purpose, remarks, date, current_stage) 
+    VALUES (?, ?, ?, ?, ?, ?, ?, 1)
     """
 
     check_query = """
-    SELECT COUNT(*) FROM items WHERE isbn = ? AND recommender = ? AND date = ?
+    SELECT COUNT(*) FROM items WHERE isbn = ? AND recommender = ? AND email = ? AND number_of_copies = ? AND purpose = ? AND remarks = ? AND date = ?
     """
     # Process each row in the CSV
     for row in csv_reader:
@@ -125,12 +165,12 @@ async def load(backup_file: UploadFile):
 
 
             # Check for duplicates
-            cursor.execute(check_query, (isbn, recommender, date))
+            cursor.execute(check_query, (isbn, recommender,email,number_of_copies,purpose,remarks, date))
             count = cursor.fetchone()[0]
             if count > 0:
                 continue  # Skip if duplicate found
 
-            cursor.execute(insert_query, (isbn, recommender, email, number_of_copies, purpose, remarks, date,isbn))
+            cursor.execute(insert_query, (isbn, recommender, email, number_of_copies, purpose, remarks, date))
         except Exception as e:
             print(f"Error processing row {row}: {e}")
             continue

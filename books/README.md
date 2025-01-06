@@ -161,9 +161,9 @@ To help the librarian, we need to build a chhootu webpage that can help track al
 * Global search
     - Link to search functionality must  appear in all pages.
     - [ ] A separate page to find the status of a book based on
-	* ISBN and
-	* Recommender and
-	* Title
+        * ISBN and
+        * Recommender and
+        * Title
     - [ ] If a field is empty, do not use it in search.
     - [ ] The search should display all the info that is matching.
     - [ ] Ability to download data as csv

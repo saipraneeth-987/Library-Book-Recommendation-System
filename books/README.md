@@ -104,19 +104,6 @@ To help the librarian, we need to build a chhootu webpage that can help track al
     - All the approved books from the previous stage comes here.
     - If approved, the book moves to the next stage. If not, the process ends here
     - Desirable information to be maintained and displayed in this stage are
-<<<<<<< HEAD
-        * Date on which stage 3 (Dean acads approval) is completed (non editable, autocalculated based on date of move to stage 4)
-        * ISBN (non editable, from stage 3)
-        * Name of book (non editable, from stage 3)
-        * Name of authors (non editable, from stage 3)
-        * Number of copies (non editable, from stage 3)
-        * Currency  (editable, text)
-        * Cost in currency (non editable, number)
-        * Cost in INR (non editable, number)
-        * Vendor name (editable, text)
-	    * Vendor address (editable, text)
-    	* Vendor invoice number (editable, text+number)
-=======
 	* All details from stage 3
     - Desirable features
 	- [ ] New field on stage. Stages can be one of Initiated, Processing, Duplicate, Approved, Under enquiry, Ordered, Received, Processed, Not available, Not approved.

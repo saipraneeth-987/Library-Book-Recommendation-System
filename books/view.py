@@ -361,80 +361,80 @@ async def edit_in_stage2(id: int):
 
         # ISBN (non-editable)
         Group(
-            H6("ISBN", style="margin-right: 10px; min-width: 60px; text-align: left; color: #53B6AC"),
-            Input(id="isbn", readonly=True, style ="border:1px solid #588C87"),  # Fetch ISBN from the stored data
+            H6("ISBN", style="margin-right: 10px; min-width: 60px; text-align: left; color: #53B6AC;"),
+            Input(id="isbn", readonly=True, style ="border:1.3px solid #53B6AC;"),  # Fetch ISBN from the stored data
             style="display: flex; align-items: center; gap: 10px;"
         ),
 
         # Modified ISBN (editable)
         Group(
-            H6("Modified ISBN (*)", style="margin-right: 10px; min-width: 60px; text-align: left;"),
-            Input(id="modified_isbn"),
+            H6("Modified ISBN (*)", style="margin-right: 10px; color: #D369A3; min-width: 60px; text-align: left;"),
+            Input(id="modified_isbn", style ="border:1.3px solid #D369A3;"),
             style="display: flex; align-items: center; gap: 10px;"
         ),
 
         # Name of recommender (non-editable)
         Group(
             H6("Recommender", style="margin-right: 10px; min-width: 60px; text-align: left;color: #53B6AC;"),
-            Input(id="recommender", readonly=True, style ="border:1px solid #588C87;"),  # Fetch recommender from stored data
+            Input(id="recommender", readonly=True, style ="border:1.3px solid #53B6AC;"),  # Fetch recommender from stored data
             style="display: flex; align-items: center; gap: 10px;"
         ),
         Group(
             H6("Email", style="margin-right: 10px; min-width: 60px; text-align: left;color: #53B6AC;"),
-            Input(id="email", readonly=True, style ="border:1px solid #588C87;"),  # Fetch recommender from stored data
+            Input(id="email", readonly=True, style ="border:1.3px solid #53B6AC;"),  # Fetch recommender from stored data
             style="display: flex; align-items: center; gap: 10px;"
         ),
         # Number of copies (editable)
         Group(
-            H6("Number of copies", style="margin-right: 10px; min-width: 60px; text-align: left;"),
-            Input(id="number_of_copies", type="number"),
+            H6("Number of copies", style="margin-right: 10px; color: #D369A3; min-width: 60px; text-align: left;"),
+            Input(id="number_of_copies", type="number", style ="border:1.3px solid #D369A3;"),
             style="display: flex; align-items: center; gap: 10px;"
         ),
 
         # Name of book (editable)
         Group(
-            H6("Title(*)", style="margin-right: 10px; min-width: 60px; text-align: left;"),
-            Input(id="book_name"),
+            H6("Title(*)", style="margin-right: 10px; min-width: 60px; color: #D369A3; text-align: left;"),
+            Input(id="book_name", style ="border:1.3px solid #D369A3;"),
             style="display: flex; align-items: center; gap: 10px;"
         ),
 
         Group(
-            H6("Sub Title", style="margin-right: 10px; min-width: 60px; text-align: left;"),
-            Input(id="sub_title"),
+            H6("Sub Title", style="margin-right: 10px; min-width: 60px; color: #D369A3; text-align: left;"),
+            Input(id="sub_title", style ="border:1.3px solid #D369A3;"),
             style="display: flex; align-items: center; gap: 10px;"
         ),
 
 
         # Remarks (editable)
         Group(
-            H6("Remarks", style="margin-right: 10px; min-width: 60px; text-align: left;"),
-            Input(id="remarks_stage2"),
+            H6("Remarks", style="margin-right: 10px; min-width: 60px; color: #D369A3; text-align: left;"),
+            Input(id="remarks_stage2", style ="border:1.3px solid #D369A3;"),
             style="display: flex; align-items: center; gap: 10px;"
         ),
 
         # Publisher (editable)
         Group(
-            H6("Publisher(*)", style="margin-right: 10px; min-width: 60px; text-align: left;"),
-            Input(id="publisher"),
+            H6("Publisher(*)", style="margin-right: 10px; min-width: 60px; text-align: left;color: #D369A3; "),
+            Input(id="publisher", style ="border:1.3px solid #D369A3;"),
             style="display: flex; align-items: center; gap: 10px;"
         ),
 
         Group(
-            H6("Edition/Year(*)", style="margin-right: 10px; min-width: 60px; text-align: left;"),
-            Input(id="edition_or_year"),
+            H6("Edition/Year(*)", style="margin-right: 10px; min-width: 60px; text-align: left;color: #D369A3; "),
+            Input(id="edition_or_year", style ="border:1.3px solid #D369A3;"),
             style="display: flex; align-items: center; gap: 10px;"
         ),
 
         # Author names (editable)
         Group(
-            H6("Author(*)", style="margin-right: 10px; min-width: 60px; text-align: left;"),
-            Input(id="authors"),
+            H6("Author(*)", style="margin-right: 10px; min-width: 60px; text-align: left;color: #D369A3; "),
+            Input(id="authors", style ="border:1.3px solid #D369A3;"),
             style="display: flex; align-items: center; gap: 10px;"
         ),
 
         # Currency (editable)
         Group(
-            H6("Currency(*)", style="margin-right: 10px; min-width: 60px; text-align: left;"),
+            H6("Currency(*)", style="margin-right: 10px; min-width: 60px; text-align: left;color: #D369A3; "),
             Select(
                 Option("Select Currency", value="", disabled=True, selected=True), #"USD", "EUR", "JPY", "GBP", "AUD", "CAD", "CHF", "CNY", "SEK", "NZD"
                 Option("USD", value="USD"),
@@ -448,28 +448,28 @@ async def edit_in_stage2(id: int):
                 Option("SEK" , value="SEK" ),
                 Option("NZD" , value="NZD" ),
                 id="currency",
-                style="padding: 5px; min-width: 120px;"
+                style="padding: 5px; min-width: 120px; border:1.3px solid #D369A3;"
             ),
             style="display: flex; align-items: center; gap: 10px;"
         ),
 
         # Cost in currency (editable)
         Group(
-            H6("Cost in Currency(*)", style="margin-right: 10px; min-width: 60px; text-align: left;"),
-            Input(id="cost_currency", type="float"),
+            H6("Cost in Currency(*)", style="margin-right: 10px; min-width: 60px; text-align: left;color: #D369A3; "),
+            Input(id="cost_currency", type="float", style ="border:1.3px solid #D369A3;"),
             style="display: flex; align-items: center; gap: 10px;"
         ),
 
         
         # Total cost (editable and auto-calculated)
         Group(
-            H6("Book Availability", style="margin-right: 10px; min-width: 60px; text-align: left;"),
+            H6("Book Availability", style="margin-right: 10px; min-width: 60px; text-align: left;color: #D369A3; "),
             Select(
                 Option("Select Availability", value="", disabled=True, selected=True),
                 Option("Yes", value="Yes"),
                 Option("No", value="No"),
                 id="availability_stage2",
-                style="padding: 5px; min-width: 120px;"
+                style="padding: 5px; min-width: 120px; border:1.3px solid #D369A3;"
             ),
             style="display: flex; align-items: center; gap: 10px;"
         ),
@@ -699,26 +699,25 @@ async def edit_in_stage3(id: int):
 
         Group(
             H6("ISBN", style="margin-right: 10px; min-width: 60px; text-align: left; color: #53B6AC"),
-            Input(id="isbn", readonly=True, style ="border:1px solid #588C87"),  # Fetch ISBN from the stored data
+            Input(id="isbn", readonly=True, style ="border:1.3px solid #53B6AC;"),  # Fetch ISBN from the stored data
             style="display: flex; align-items: center; gap: 10px;"
         ),
-
         
         Group(
-            H6("Status", style="margin-right: 10px; min-width: 60px; text-align: left;"),
+            H6("Status", style="margin-right: 10px; min-width: 60px; color: #D369A3; text-align: left;"),
             Select(
                 Option("Select Status", value="", disabled=True, selected=True),
                 Option("Approved", value="approved"),
                 Option("Rejected", value="rejected"),
                 id="status",
-                style="padding: 5px; min-width: 120px;"
+                style="padding: 5px; min-width: 120px; border:1.3px solid #D369A3;"
             ),
             style="display: flex; align-items: center; gap: 10px;"
         ),
 
         Group(
-            H6("Approval Remarks", style="margin-right: 10px; min-width: 60px; text-align: left;"),
-            Input(id="approval_remarks"),
+            H6("Approval Remarks", style="margin-right: 10px; min-width: 60px; color: #D369A3; text-align: left;"),
+            Input(id="approval_remarks" , style ="border:1.3px solid #D369A3;"),
             style="display: flex; align-items: center; gap: 10px;"
         ),
         action="/update-bookstage3", id="edit", method='post'

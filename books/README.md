@@ -105,8 +105,6 @@ To help the librarian, we need to build a chhootu webpage that can help track al
     - If approved, the book moves to the next stage. If not, the process ends here
     - Desirable information to be maintained and displayed in this stage are
 	* All details from stage 3
-        * Status of approval from Dean academics (not editable, dropdown - Approved/Not approved). Default value: Approved
-        * Remarks (editable, specific for stage 4 (don't copy from stage 3))
     - Desirable features
 	- [ ] New field on stage. Stages can be one of Initiated, Processing, Duplicate, Approved, Under enquiry, Ordered, Received, Processed, Not available, Not approved.
 	- [ ] Books that are not approved must be moved to Not approved stage. Move to Not approved stage must be enabled if the status is not approved.
@@ -163,9 +161,9 @@ To help the librarian, we need to build a chhootu webpage that can help track al
 * Global search
     - Link to search functionality must  appear in all pages.
     - [ ] A separate page to find the status of a book based on
-	* ISBN and
-	* Recommender and
-	* Title
+        * ISBN and
+        * Recommender and
+        * Title
     - [ ] If a field is empty, do not use it in search.
     - [ ] The search should display all the info that is matching.
     - [ ] Ability to download data as csv

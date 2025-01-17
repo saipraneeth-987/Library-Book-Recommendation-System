@@ -544,7 +544,10 @@ def stage3(page: int = 1, sort_by: str = "date_stage_update", order: str = "asc"
     if sort_by in ["date_stage_update"]:
         reverse = order == "desc"
         column_index = {"date_stage_update": 14}[sort_by]
-        all_items.sort(key=lambda x: x[column_index], reverse=reverse)
+        all_items.sort(
+            key=lambda x: (x[column_index] is None, x[column_index] if x[column_index] is not None else ""), 
+            reverse=reverse
+        )
 
     # Pagination calculations
     total_items = len(all_items)

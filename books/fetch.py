@@ -57,7 +57,7 @@ def stage3():
     connection = sqlite3.connect('data/library.db')
     cursor = connection.cursor()
     cursor.execute("""
-        SELECT id, isbn, book_name, sub_title, authors, publisher, edition_or_year, 
+        SELECT id, modified_isbn, book_name, sub_title, authors, publisher, edition_or_year, 
             number_of_copies, currency, recommender, purpose, cost_currency, status, 
             approval_remarks, date_stage_update
         FROM items
@@ -104,7 +104,7 @@ def stage4():
     connection = sqlite3.connect('data/library.db')
     cursor = connection.cursor()
     cursor.execute("""
-        SELECT id, isbn, book_name, sub_title, authors, publisher, edition_or_year, 
+        SELECT id, modified_isbn, book_name, sub_title, authors, publisher, edition_or_year, 
             number_of_copies, currency, recommender, purpose, cost_currency, status, 
             approval_remarks, date_stage_update
         FROM items
@@ -127,11 +127,80 @@ def notapproved():
     connection = sqlite3.connect('data/library.db')
     cursor = connection.cursor()
     cursor.execute("""
-        SELECT id, isbn, book_name, sub_title, authors, publisher, edition_or_year, 
+        SELECT id, modified_isbn, book_name, sub_title, authors, publisher, edition_or_year, 
             number_of_copies, currency, recommender, purpose, cost_currency, status, 
             approval_remarks, date_stage_update
         FROM items
         WHERE current_stage = 10 
+        ORDER BY date DESC
+    """)
+
+    items = cursor.fetchall()
+    connection.close()
+
+    # Convert the date to proper datetime format and sort if necessary
+    
+    # Sort by date in descending order after conversion
+    items.sort(key=lambda x: x[14] if x[14] is not None else "", reverse=True)
+
+
+    return items
+
+def stage5():
+    connection = sqlite3.connect('data/library.db')
+    cursor = connection.cursor()
+    cursor.execute("""
+        SELECT id, modified_isbn, book_name, sub_title, authors, publisher, edition_or_year, 
+            number_of_copies, currency, recommender, purpose, cost_currency, status, 
+            approval_remarks, date_stage_update,availability_stage5,supplier_info,remarks_stage5
+        FROM items
+        WHERE current_stage = 5 
+        ORDER BY date DESC
+    """)
+
+    items = cursor.fetchall()
+    connection.close()
+
+    # Convert the date to proper datetime format and sort if necessary
+    
+    # Sort by date in descending order after conversion
+    items.sort(key=lambda x: x[14] if x[14] is not None else "", reverse=True)
+
+
+    return items
+
+def stage11():
+    connection = sqlite3.connect('data/library.db')
+    cursor = connection.cursor()
+    cursor.execute("""
+        SELECT id,modified_isbn, book_name, sub_title, authors, publisher, edition_or_year, 
+            number_of_copies, currency, recommender, purpose, cost_currency, status, 
+            approval_remarks, date_stage_update,availability_stage5,supplier_info,remarks_stage5
+        FROM items
+        WHERE current_stage = 11 
+        ORDER BY date DESC
+    """)
+
+    items = cursor.fetchall()
+    connection.close()
+
+    # Convert the date to proper datetime format and sort if necessary
+    
+    # Sort by date in descending order after conversion
+    items.sort(key=lambda x: x[14] if x[14] is not None else "", reverse=True)
+
+
+    return items
+
+def stage6():
+    connection = sqlite3.connect('data/library.db')
+    cursor = connection.cursor()
+    cursor.execute("""
+        SELECT id, modified_isbn, book_name, sub_title, authors, publisher, edition_or_year, 
+            number_of_copies, currency, recommender, purpose, cost_currency, status, 
+            approval_remarks, date_stage_update,availability_stage5,supplier_info,remarks_stage5,remarks_stage6
+        FROM items
+        WHERE current_stage = 6 
         ORDER BY date DESC
     """)
 

@@ -10,6 +10,11 @@ import requests
 import functions 
 import download
 import view
+from flask import  request
+
+
+
+
 
 # Initialize the FastAPI application
 app, rt, BookRecommendations, BookRecommendation = fast_app(
@@ -39,6 +44,10 @@ app, rt, BookRecommendations, BookRecommendation = fast_app(
     date_stage_update = datetime,
     availability_stage2 = str,
     remarks_stage2 = str,
+    availability_stage5 = str,
+    supplier_info = str,
+    remarks_stage5 = str,
+    remarks_stage6 = str,
     pk='id',  # Primary key field (id will be automatically generated)
 )
 
@@ -355,13 +364,7 @@ def move_to_stage1_from_notapproved(isbn: int):
     return RedirectResponse("/stage3", status_code=302)
 
 
-@app.get("/stage5")
-def stage5():
-    return "<h1>This is Stage5</h1>"
 
-@app.get("/stage6")
-def stage6():
-    return "<h1>This is Stage6</h1>"
 
 @app.get("/stage7")
 def stage6():
@@ -371,6 +374,130 @@ def stage6():
 def stage8():
     return "<h1>This is Stage8</h1>"
 
+
+
+@app.get("/stage5")
+def stage5(page: int = 1, sort_by: str = "date_stage_update", order: str = "desc", search: str= "", date_range: str = "all"):
+    return view.stage5(page,sort_by,order,search,date_range)
+
+@app.get("/downloadstage5")
+def download_csv():
+    return download.download_stage5()
+
+
+
+@app.get("/move_to_stage6_from_stage5/{isbn}")
+def move_to_stage6_from_stage5(isbn: int):
+    try:
+        # Connect to the database
+        connection = sqlite3.connect('data/library.db')
+        cursor = connection.cursor()
+
+        # Fetch the status of the item
+        cursor.execute("""
+            SELECT availability_stage5
+            FROM items
+            WHERE isbn = ? AND current_stage = 5
+        """, (isbn,))
+        result = cursor.fetchone()
+    except sqlite3.Error as e:
+        return {"error": f"Database error: {str(e)}"}
+    finally:
+        connection.close()
+
+    if result:
+        Availability = result[0].strip()  # Extract the status from the query result
+
+        # Handle status-based transitions
+        if Availability == "Available":
+            functions.update_stage(isbn, 5, 6)
+            return RedirectResponse("/stage6", status_code=302)
+        elif Availability == "Not Available":
+            functions.update_stage(isbn, 5, 11)
+            return RedirectResponse("/stage11", status_code=302)
+        else:
+            return {"error": f"Invalid status '{Availability}'. Only 'Available' or 'Not Available' are valid."}
+    else:
+        return {"error": "No book found with the given ISBN in stage 5."}
+
+@app.get("/move_to_stage4_from_stage5/{isbn}")
+def move_to_stage4_from_stage5(isbn: int):
+    functions.update_stage(isbn,5,4)
+    return RedirectResponse("/stage4", status_code=302)
+    
+
+@app.get("/edit-book_stage5/{id}")
+async def edit_book(id: int):
+    res = await view.edit_in_stage5(id)
+    frm = fill_form(res,BookRecommendations[id] )
+    return Titled('Edit Book Recommendation', frm)
+
+
+@app.post("/update-bookstage5")
+def update_bookstage5(isbn: int,  
+                      availability_stage5: str,
+                      supplier_info:str,
+                      remarks_stage5: str,
+                      ):
+    
+    connection = sqlite3.connect('data/library.db')
+    cursor = connection.cursor()
+
+    try:
+        # Update the book details in the database
+        cursor.execute("""
+            UPDATE items
+            SET   
+                availability_stage5 = ?,
+                supplier_info = ?,
+                approval_remarks = ?
+            WHERE 
+                isbn = ? AND 
+                current_stage = 5
+        """, ( availability_stage5,supplier_info,remarks_stage5, isbn))
+        connection.commit()
+        if cursor.rowcount == 0:
+            return {"error": f"No book found with ISBN {isbn} to update."}
+    except sqlite3.Error as e:
+        # Rollback the transaction in case of error
+        connection.rollback()
+        return {"error": f"Database error: {str(e)}"}
+    
+    finally:
+        connection.close()
+    return RedirectResponse(url="/stage5", status_code=302)
+
+@app.get("/stage11")
+def stage11(page: int = 1, sort_by: str = "date_stage_update", order: str = "desc", search: str= "", date_range: str = "all"):
+    return view.stage11(page,sort_by,order,search,date_range)
+
+@app.get("/downloadstage11")
+def download_csv():
+    return download.download_stage11()
+
+@app.get("/move_to_stage5_from_stage11/{isbn}")
+def move_to_stage5_from_stage11(isbn: int):
+    functions.update_stage(isbn,11,5)
+    return RedirectResponse("/stage5", status_code=302)
+    
+
+@app.get("/stage6")
+def stage6(page: int = 1, sort_by: str = "date_stage_update", order: str = "desc", search: str= "", date_range: str = "all"):
+    return view.stage6(page,sort_by,order,search,date_range)
+
+@app.get("/downloadstage6")
+def download_csv():
+    return download.download_stage6()
+
+@app.get("/move_to_stage7_from_stage6/{isbn}")
+def move_to_stage7_from_stage6(isbn: int):
+    functions.update_stage(isbn,6,7)
+    return RedirectResponse("/stage7", status_code=302)
+
+@app.get("/move_to_stage5_from_stage6/{isbn}")
+def move_to_stage5_from_stage6(isbn: int):
+    functions.update_stage(isbn,6,5)
+    return RedirectResponse("/stage7", status_code=302)
 
 # Initialize the server
 serve()

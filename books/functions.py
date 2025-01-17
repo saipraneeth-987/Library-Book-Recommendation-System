@@ -20,27 +20,22 @@ def update_stage(isbn: int, current_stage: int,new_stage: int):
         connection.commit()
 
 def get_book_details(isbn):
-    if(isbn):
-        api_key = "AIzaSyBVqOwuDKlY35_CSFSuhWzcAP4MIGnqLLU"
-        url = f"https://www.googleapis.com/books/v1/volumes?q=isbn:{isbn}&key={api_key}"
-        response = requests.get(url)
-        if response.status_code == 200:
-            data = response.json()
-            print(data)
-            if "items" in data:
-                book = data["items"][0]["volumeInfo"]
-                title = book.get("title", "Unknown Title") 
-                subtitle = book.get("subtitle","")
-                authors = ", ".join(book.get("authors", ["Unknown Author"]))
-                publishers = book.get("publisher", ["Unknown Publisher"])
-                return {"title": title, "subtitle": subtitle, "authors": authors, "publisher":publishers}
-            else:
-                return {"error": "Book not found"}
+    api_key = "AIzaSyBVqOwuDKlY35_CSFSuhWzcAP4MIGnqLLU"
+    url = f"https://www.googleapis.com/books/v1/volumes?q=isbn:{isbn}&key={api_key}"
+    response = requests.get(url)
+    if response.status_code == 200:
+        data = response.json()
+        print(data)
+        if "items" in data:
+            book = data["items"][0]["volumeInfo"]
+            title = book.get("title", "Unknown Title") + ": " + book.get("subtitle")
+            authors = ", ".join(book.get("authors", ["Unknown Author"]))
+            publishers = book.get("publisher", ["Unknown Publisher"])
+            return {"title": title, "authors": authors, "publisher":publishers}
         else:
-            return {f"Failed to fetch details: {response.status_code}"}
-
+            return {"error": "Book not found"}
     else:
-        return {" "}
+        return {f"Failed to fetch details: {response.status_code}"}
 
 
 def filter_by_date(all_items, date_range):

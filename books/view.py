@@ -491,6 +491,7 @@ async def edit_in_stage2(id: int):
 
         const authors = document.getElementById('authors');
         const title = document.getElementById('book_name');
+        const subtitle =  document.getElementById('sub_title');
         const publishers = document.getElementById('publisher');
         try {
             const response = await fetch(`/api/get-book-details?isbn=${isbn}`);
@@ -500,6 +501,7 @@ async def edit_in_stage2(id: int):
                 console.log(data)
                 if (data.error) {
                     authors.value = "Error: " + data.error;
+                    subtitle.value = "";
                     title.value = "";
                     publishers.value = "";
                 } else {
@@ -508,6 +510,7 @@ async def edit_in_stage2(id: int):
                     authors.value = data.authors || "Unknown Authors";
                     console.log(authors.value)
                     title.value = data.title || "Unknown Title";
+                    subtitle.value = data.subtitle || "";
                     publishers.value = data.publishers || "Unknown Publishers";
                 }
             } else {

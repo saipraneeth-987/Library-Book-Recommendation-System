@@ -28,13 +28,11 @@ def get_book_details(isbn):
         print(data)
         if "items" in data:
             book = data["items"][0]["volumeInfo"]
-            l = ""
-            if(book.get("subtitle")):
-                l = ": "
-            title = book.get("title", "Unknown Title") + l + book.get("subtitle","")
+            title = book.get("title", "Unknown Title") 
+            subtitle = book.get("subtitle","")
             authors = ", ".join(book.get("authors", ["Unknown Author"]))
             publishers = book.get("publisher", ["Unknown Publisher"])
-            return {"title": title, "authors": authors, "publisher":publishers}
+            return {"title": title, "subtitle": subtitle, "authors": authors, "publisher":publishers}
         else:
             return {"error": "Book not found"}
     else:

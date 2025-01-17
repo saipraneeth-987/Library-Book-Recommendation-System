@@ -48,6 +48,8 @@ app, rt, BookRecommendations, BookRecommendation = fast_app(
     supplier_info = str,
     remarks_stage5 = str,
     remarks_stage6 = str,
+    remarks_stage7 = str,
+    remarks_stage8 = str,
     pk='id',  # Primary key field (id will be automatically generated)
 )
 
@@ -366,13 +368,6 @@ def move_to_stage1_from_notapproved(isbn: int):
 
 
 
-@app.get("/stage7")
-def stage6():
-    return "<h1>This is Stage7</h1>"
-
-@app.get("/stage8")
-def stage8():
-    return "<h1>This is Stage8</h1>"
 
 
 
@@ -489,15 +484,267 @@ def stage6(page: int = 1, sort_by: str = "date_stage_update", order: str = "desc
 def download_csv():
     return download.download_stage6()
 
-@app.get("/move_to_stage7_from_stage6/{isbn}")
-def move_to_stage7_from_stage6(isbn: int):
-    functions.update_stage(isbn,6,7)
-    return RedirectResponse("/stage7", status_code=302)
 
 @app.get("/move_to_stage5_from_stage6/{isbn}")
 def move_to_stage5_from_stage6(isbn: int):
     functions.update_stage(isbn,6,5)
     return RedirectResponse("/stage7", status_code=302)
+
+@app.get("/edit-book_stage6/{id}")
+async def edit_book(id: int):
+    res = await view.edit_in_stage6(id)
+    frm = fill_form(res,BookRecommendations[id] )
+    return Titled('Edit Book Recommendation', frm)
+
+
+@app.post("/update-bookstage6")
+def update_bookstage6(
+    modified_isbn: int,
+    book_name: str, 
+    sub_title: str,
+    authors: str,
+    publisher: str,
+    edition_or_year: str,
+    number_of_copies: int, 
+    currency: str, 
+    cost_currency: float,  
+    availability_stage5: str,
+    supplier_info:str,
+    remarks_stage5:str,
+    remarks_stage6:str,
+):
+    
+    
+    # Check for missing mandatory fields
+    missing_fields = []
+    
+    if not book_name:
+        missing_fields.append("Title")
+    if not authors:
+        missing_fields.append("Author")
+    if not publisher:
+        missing_fields.append("Publisher")
+    if not edition_or_year:
+        missing_fields.append("Edition/Year")
+    if not number_of_copies:
+        missing_fields.append("Number of copies")
+    if not currency:
+        missing_fields.append("Currency")
+    if not cost_currency:
+        missing_fields.append("Cost (in currency)")
+    if not availability_stage5:
+        missing_fields.append("Availability while Enquiry")
+    if not supplier_info:
+        missing_fields.append("Supplier Information")
+    
+    # Return error if any mandatory field is missing
+    if missing_fields:
+        return {"error": f"The following fields are mandatory and must be filled: {', '.join(missing_fields)}"}
+
+    # Connect to the database and update
+    connection = sqlite3.connect('data/library.db')
+    cursor = connection.cursor()
+
+    try:
+        # Update the book details in the database
+        cursor.execute("""
+            UPDATE items
+            SET 
+                modified_isbn = ?, 
+                book_name = ?, 
+                sub_title =?,
+                authors = ?,
+                publisher = ?,
+                edition_or_year = ?,
+                number_of_copies =?, 
+                currency = ?, 
+                cost_currency = ?, 
+                availability_stage5 = ?,
+                supplier_info = ?,
+                remarks_stage5 = ?,
+                remarks_stage6 = ?
+            WHERE 
+                modified_isbn = ? AND 
+                current_stage = 6
+        """, (modified_isbn,  book_name, sub_title,authors, 
+              publisher, edition_or_year,number_of_copies,  currency, cost_currency, availability_stage5,supplier_info,remarks_stage5,remarks_stage6, modified_isbn))
+        connection.commit()
+        if cursor.rowcount == 0:
+            return {"error": f"No book found with ISBN {modified_isbn} to update."}
+    except sqlite3.Error as e:
+        # Rollback the transaction in case of error
+        connection.rollback()
+        return {"error": f"Database error: {str(e)}"}
+    finally:
+        connection.close()
+
+    return RedirectResponse(url="/stage6", status_code=302)
+
+@app.get("/move_to_stage7_from_stage6/{isbn}")
+def move_to_stage7_from_stage6(isbn: int):
+    # Check if the book is fully updated with all mandatory fields
+    connection = sqlite3.connect('data/library.db')
+    cursor = connection.cursor()
+
+    cursor.execute("""
+        SELECT number_of_copies, book_name, publisher, edition_or_year, authors, currency, cost_currency,availability_stage5,supplier_info
+        FROM items
+        WHERE isbn = ? AND current_stage = 6
+    """, (isbn,))
+    
+    result = cursor.fetchone()
+    connection.close()
+    
+    if result:
+        # Check for missing mandatory fields
+        missing_fields = []
+        number_of_copies, book_name, publisher, edition_or_year, authors, currency, cost_currency,availability_stage5,supplier_info = result
+        
+        if not number_of_copies:
+            missing_fields.append("Number of copies")
+        if not book_name:
+            missing_fields.append("Title")
+        if not publisher:
+            missing_fields.append("Publisher")
+        if not edition_or_year:
+            missing_fields.append("Edition/Year")
+        if not authors:
+            missing_fields.append("Author")
+        if not currency:
+            missing_fields.append("Currency")
+        if not cost_currency:
+            missing_fields.append("Cost (in currency)")
+        if not availability_stage5:
+            missing_fields.append("Availability while enquiry")
+        if not supplier_info:
+            missing_fields.append("Supplier Information")
+
+
+
+        # If there are missing fields, return an error message
+        if missing_fields:
+            return {"error": f"The following fields are mandatory and must be filled: {', '.join(missing_fields)}"}
+        
+        # If all mandatory fields are filled, proceed to move to stage 3
+        if availability_stage5 == "Available":
+            functions.update_stage(isbn, 6, 7)
+            return RedirectResponse("/stage7", status_code=302)
+        if availability_stage5 == "Not Available":
+            functions.update_stage(isbn, 6, 11)
+            return RedirectResponse("/stage11", status_code=302)
+        
+    
+    return {"error": "No book found with the given ISBN in stage 6."}
+
+
+@app.get("/stage7")
+def stage7(page: int = 1, sort_by: str = "date_stage_update", order: str = "desc", search: str= "", date_range: str = "all"):
+    return view.stage7(page,sort_by,order,search,date_range)
+
+@app.get("/downloadstage7")
+def download_csv():
+    return download.download_stage7()
+
+
+@app.get("/move_to_stage8_from_stage7/{isbn}")
+def move_to_stage8_from_stage7(isbn: int):
+    functions.update_stage(isbn,7,8)
+    return RedirectResponse("/stage8", status_code=302)
+
+@app.get("/move_to_stage6_from_stage7/{isbn}")
+def move_to_stage6_from_stage7(isbn: int):
+    functions.update_stage(isbn,7,6)
+    return RedirectResponse("/stage6", status_code=302)
+
+
+@app.get("/edit-book_stage7/{id}")
+async def edit_book(id: int):
+    res = await view.edit_in_stage7(id)
+    frm = fill_form(res,BookRecommendations[id] )
+    return Titled('Edit Book Recommendation', frm)
+
+@app.post("/update-bookstage7")
+def update_bookstage7(isbn: int,  
+                      remarks_stage7: str,
+                      ):
+    
+    connection = sqlite3.connect('data/library.db')
+    cursor = connection.cursor()
+
+    try:
+        # Update the book details in the database
+        cursor.execute("""
+            UPDATE items
+            SET   
+                remarks_stage7 = ?
+            WHERE 
+                isbn = ? AND 
+                current_stage = 7
+        """, ( remarks_stage7, isbn))
+        connection.commit()
+        if cursor.rowcount == 0:
+            return {"error": f"No book found with ISBN {isbn} to update."}
+    except sqlite3.Error as e:
+        # Rollback the transaction in case of error
+        connection.rollback()
+        return {"error": f"Database error: {str(e)}"}
+    
+    finally:
+        connection.close()
+    return RedirectResponse(url="/stage7", status_code=302)
+
+@app.get("/stage8")
+def stage8(page: int = 1, sort_by: str = "date_stage_update", order: str = "desc", search: str= "", date_range: str = "all"):
+    return view.stage8(page,sort_by,order,search,date_range)
+
+@app.get("/downloadstage8")
+def download_csv():
+    return download.download_stage8()
+
+
+
+@app.get("/move_to_stage7_from_stage8/{isbn}")
+def move_to_stage6_from_stage7(isbn: int):
+    functions.update_stage(isbn,8,7)
+    return RedirectResponse("/stage7", status_code=302)
+
+
+@app.get("/edit-book_stage8/{id}")
+async def edit_book(id: int):
+    res = await view.edit_in_stage8(id)
+    frm = fill_form(res,BookRecommendations[id] )
+    return Titled('Edit Book Recommendation', frm)
+
+@app.post("/update-bookstage8")
+def update_bookstage7(isbn: int,  
+                      remarks_stage8: str,
+                      ):
+    
+    connection = sqlite3.connect('data/library.db')
+    cursor = connection.cursor()
+
+    try:
+        # Update the book details in the database
+        cursor.execute("""
+            UPDATE items
+            SET   
+                remarks_stage8 = ?
+            WHERE 
+                isbn = ? AND 
+                current_stage = 8
+        """, ( remarks_stage8, isbn))
+        connection.commit()
+        if cursor.rowcount == 0:
+            return {"error": f"No book found with ISBN {isbn} to update."}
+    except sqlite3.Error as e:
+        # Rollback the transaction in case of error
+        connection.rollback()
+        return {"error": f"Database error: {str(e)}"}
+    
+    finally:
+        connection.close()
+    return RedirectResponse(url="/stage8", status_code=302)
+
 
 # Initialize the server
 serve()

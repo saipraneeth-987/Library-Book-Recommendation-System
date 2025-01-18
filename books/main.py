@@ -11,9 +11,8 @@ import functions
 import download
 import view
 from flask import  request
-
-
-
+from pydantic import BaseModel
+from fastapi.middleware.cors import CORSMiddleware
 
 
 # Initialize the FastAPI application
@@ -50,8 +49,21 @@ app, rt, BookRecommendations, BookRecommendation = fast_app(
     remarks_stage6 = str,
     remarks_stage7 = str,
     remarks_stage8 = str,
+    clubbed = bool,
+    c_id = list,
     pk='id',  # Primary key field (id will be automatically generated)
 )
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],  # Allow all HTTP methods (GET, POST, etc.)
+    allow_headers=["*"],  # Allow all headers
+)
+
+class RowData(BaseModel):
+    mixedRow: list[str]
 
 @app.get("/api/get-book-details")
 async def get_book_details_api(isbn: str ):
@@ -745,6 +757,23 @@ def update_bookstage7(isbn: int,
         connection.close()
     return RedirectResponse(url="/stage8", status_code=302)
 
+@app.post("/club-rows")
+async def club_rows(data: RowData):
+    print(data.mixedRow)
+    try:
+        mixed_row = data.mixedRow
+        if len(mixed_row) < 2:
+            raise HTTPException(status_code=400, detail="Please select more than one row.")
+          
+        print(f"Processing rows: {mixed_row}")  
+
+        #combined_row = f"Combined: {row1} + {row2}"
+        #print(f"Combined row: {combined_row}") 
+        
+        return {"message": f"Rows successfully clubbed"}
+
+    except Exception as e:
+        return JSONResponse(content={"message": f"Error clubbing rows: {str(e)}"}, status_code=500)
 
 # Initialize the server
 serve()

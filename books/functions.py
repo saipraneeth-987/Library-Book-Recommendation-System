@@ -143,6 +143,8 @@ async def load(backup_file: UploadFile):
         total_cost REAL,
         approval_remarks TEXT,
         current_stage INTEGER NOT NULL DEFAULT 1, -- Tracks stage (1 to 6)
+        clubbed bool DEFAULT false,
+        c_id text,
         UNIQUE(isbn, recommender, date) -- Ensure ISBN, Name, and date combination is unique
     )
     """)

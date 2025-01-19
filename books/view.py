@@ -532,7 +532,7 @@ async def edit_in_stage2(id: int):
     return (res,js)
 
 
-def stage3(page: int = 1, sort_by: str = "date_stage_update", order: str = "asc", search: str = "", date_range: str = "all"):
+def stage3(page: int = 1, sort_by: str = "date_stage_update", order: str = "asc",search: str ="",date_range:str="all"):
     all_items = fetch.stage3()
     all_items = functions.filter_by_date3(all_items, date_range)
     # Apply search filter
@@ -672,11 +672,13 @@ def stage3(page: int = 1, sort_by: str = "date_stage_update", order: str = "asc"
                 Td(item[12], style="font-size: smaller; padding: 4px;"),
                 Td(item[13], style="font-size: smaller; padding: 4px;"),
                 Td(item[14], style="font-size: smaller; padding: 4px;maxwidth: 500px"),
-                Td(
+                Td((
                     A("Edit", href=f"/edit-book_stage3/{item[0]}", style="display:block;font-size: smaller;margin-bottom:3px; width:130px"),
                     A("Move to Next Stage ", href=f"/move_to_stage4_from_stage3/{item[1]}", style="display:block;font-size: smaller;margin-bottom:3px"),
-                    A("Move to Previous Stage ", href=f"/move_to_stage2_from_stage3/{item[1]}", style="display:block;font-size: smaller;")
-                )
+                    A("Move to Previous Stage ", href=f"/move_to_stage2_from_stage3/{item[1]}", style="display:block;font-size: smaller;")) if item[15]==0 else (
+                    A("Download", href=f"/download_clubbed/{item[16]}", style="display:block;font-size: smaller;margin-bottom:3px"),
+                    A("Edit", href=f"/edit_clubbed/{item[0]}", style="display:block;font-size: smaller;margin-bottom:3px"))
+            )
             )
             for item in current_page_items
         ],
@@ -710,29 +712,15 @@ def stage3(page: int = 1, sort_by: str = "date_stage_update", order: str = "asc"
         )
     )
     js = """
-        function club_details(rowNums,cell){
-            const contentArray = [];
-            rowNums.forEach(rowNumber => {
-            const row = document.querySelector(`input[value="${rowNumber}"]`).closest('tr');
-
-            const content = row.cells[cell].textContent;  // Adjust index based on your table structure
-
-            contentArray.push(content);
-        });
-
-        return contentArray.join(' | ');
-        }
-        
         document.getElementById('club-rows-button').onclick = function () {
         const selectedRows = Array.from(document.querySelectorAll('input[name="row_checkbox"]:checked')).map(cb => cb.value);
+        console.log(selectedRows)
         if (selectedRows.length > 1) {
-            console.log('Selected rows to club:', selectedRows);
             fetch('http://localhost:5001/club-rows', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ mixedRow: selectedRows })
             })
-            
                 .then(response => {
                     console.log(response)
                     if (!response.ok) {
@@ -743,54 +731,17 @@ def stage3(page: int = 1, sort_by: str = "date_stage_update", order: str = "asc"
                 .then(data => {
                     console.log('Rows clubbed successfully:', data);
                     console.log(data);
-                    const table = document.getElementById('book-table').getElementsByTagName('tbody')[0];
-
-                const newRow = table.insertRow();
-
-                const cell1 = newRow.insertCell(0);
-                const cell2 = newRow.insertCell(1);
-                const cell3 = newRow.insertCell(2);
-                const cell4 = newRow.insertCell(3);
-                const cell5 = newRow.insertCell(4);
-                const cell6 = newRow.insertCell(5);
-                const cell7 = newRow.insertCell(6);
-                const cell8 = newRow.insertCell(7);
-                const cell9 = newRow.insertCell(8);
-                const cell10 = newRow.insertCell(9);
-                const cell11 = newRow.insertCell(10);
-                const cell12 = newRow.insertCell(11);
-                const cell13 = newRow.insertCell(12);
-                const cell14 = newRow.insertCell(13);
-                const cell15 = newRow.insertCell(14);
-                const cell16 = newRow.insertCell(15);
-
-                cell1.innerHTML = `<input type="checkbox" name="row_checkbox" value="${selectedRows.join(' , ')}">`; 
-                cell2.textContent = `${selectedRows.join(' , ')}`; 
-                cell3.textContent = club_details(selectedRows,2); 
-                cell4.textContent = club_details(selectedRows,3);  
-                cell5.textContent = club_details(selectedRows,4);  
-                cell6.textContent = club_details(selectedRows,5);  
-                cell7.textContent = club_details(selectedRows,6);  
-                cell8.textContent = club_details(selectedRows,7);  
-                cell9.textContent = club_details(selectedRows,8);
-                cell10.textContent = club_details(selectedRows,9);  
-                cell11.textContent = club_details(selectedRows,10); 
-                cell12.textContent = club_details(selectedRows,11); 
-                cell13.textContent = club_details(selectedRows,12);  
-                cell14.textContent = club_details(selectedRows,13);  
-                cell15.textContent = club_details(selectedRows,14); 
-                cell16.textContent = club_details(selectedRows,15); 
-                document.querySelectorAll('input[name="row_checkbox"]:checked').forEach(cb => cb.checked = false);
+                    document.querySelectorAll('input[name="row_checkbox"]:checked').forEach(cb => cb.checked = false);
+                    setTimeout(() => location.reload(), 100);
                 })
                 .catch(error => {
                     console.error('Error clubbing rows:', error);
                     alert('Error clubbing rows: ' + error.message);
                 });
         } else {
-            alert('Please select exactly two rows to club.');
+            alert('Please select more than one row to club.');
         }
     };
-
     """
     return (Titled('Book Recommendations - Stage 3', card),Script(src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.1/fabric.min.js"), Script(js))
 

@@ -324,3 +324,25 @@ def download_stage7():
         media_type="text/csv",
         headers={"Content-Disposition": "attachment; filename=books_Received.csv"}
     )
+
+def clubbed(c_id):
+    print(c_id)
+    csv_file = StringIO()
+    writer = csv.writer(csv_file)
+    writer.writerow(["ISBN", "Title", "Sub Title", "Author","Publisher","Edition/year","Purpose of recommendation","Cost in Currency","Currency","Number of copies","Recommender","Date"])
+    connection = sqlite3.connect('data/library.db')
+    cursor = connection.cursor()
+    cursor.execute("SELECT isbn,book_name,sub_title,authors,publisher,edition_or_year,purpose,cost_currency,currency,number_of_copies,recommender,date FROM items WHERE current_stage = 3 and c_id = ?", (c_id,))
+    items = cursor.fetchall()
+    for item in items:
+        writer.writerow(item)
+        
+    connection.close()
+    csv_file.seek(0)
+    return StreamingResponse(
+            csv_file,
+            media_type="text/csv",
+            headers={"Content-Disposition": "attachment; filename=clubbed.csv"}
+        )
+    
+ 

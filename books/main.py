@@ -161,7 +161,7 @@ def move_to_stage3_from_stage2(isbn: int):
 @app.get("/edit-book/{id}")
 async def edit_book(id: int):
     res,js = await view.edit_in_stage2(id)
-    frm = fill_form(res,BookRecommendations[id] )
+    frm = fill_form(res,items[id] )
     return Titled('Edit Book Recommendation', frm, Script(src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.1/fabric.min.js"), Script(js))
 
 @app.post("/update-bookstage2")
@@ -295,7 +295,7 @@ def move_to_stage2_from_stage3(isbn: int):
 @app.get("/edit-book_stage3/{id}")
 async def edit_book(id: int):
     res = await view.edit_in_stage3(id)
-    frm = fill_form(res,BookRecommendations[id] )
+    frm = fill_form(res,items[id] )
     return Titled('Edit Book Recommendation', frm)
 
 
@@ -362,8 +362,6 @@ def move_to_stage3_from_stage4(isbn: int):
     functions.update_stage(isbn,4,3)
     return RedirectResponse("/stage3", status_code=302)
 
-
-
 @app.get("/notapproved")  #stage 10
 def notapproved(page: int = 1, sort_by: str = "date_stage_update", order: str = "desc", search: str= "", date_range: str = "all"):
     return view.notapproved(page,sort_by,order,search,date_range)
@@ -378,11 +376,6 @@ def move_to_stage1_from_notapproved(isbn: int):
     return RedirectResponse("/stage3", status_code=302)
 
 
-
-
-
-
-
 @app.get("/stage5")
 def stage5(page: int = 1, sort_by: str = "date_stage_update", order: str = "desc", search: str= "", date_range: str = "all"):
     return view.stage5(page,sort_by,order,search,date_range)
@@ -390,7 +383,6 @@ def stage5(page: int = 1, sort_by: str = "date_stage_update", order: str = "desc
 @app.get("/downloadstage5")
 def download_csv():
     return download.download_stage5()
-
 
 
 @app.get("/move_to_stage6_from_stage5/{isbn}")
@@ -436,7 +428,7 @@ def move_to_stage4_from_stage5(isbn: int):
 @app.get("/edit-book_stage5/{id}")
 async def edit_book(id: int):
     res = await view.edit_in_stage5(id)
-    frm = fill_form(res,BookRecommendations[id] )
+    frm = fill_form(res,items[id])
     return Titled('Edit Book Recommendation', frm)
 
 
@@ -446,10 +438,8 @@ def update_bookstage5(isbn: int,
                       supplier_info:str,
                       remarks_stage5: str,
                       ):
-    
     connection = sqlite3.connect('data/library.db')
     cursor = connection.cursor()
-
     try:
         # Update the book details in the database
         cursor.execute("""
@@ -486,7 +476,6 @@ def download_csv():
 def move_to_stage5_from_stage11(isbn: int):
     functions.update_stage(isbn,11,5)
     return RedirectResponse("/stage5", status_code=302)
-    
 
 @app.get("/stage6")
 def stage6(page: int = 1, sort_by: str = "date_stage_update", order: str = "desc", search: str= "", date_range: str = "all"):
@@ -505,7 +494,7 @@ def move_to_stage5_from_stage6(isbn: int):
 @app.get("/edit-book_stage6/{id}")
 async def edit_book(id: int):
     res = await view.edit_in_stage6(id)
-    frm = fill_form(res,BookRecommendations[id] )
+    frm = fill_form(res,items[id])
     return Titled('Edit Book Recommendation', frm)
 
 
@@ -525,11 +514,8 @@ def update_bookstage6(
     remarks_stage5:str,
     remarks_stage6:str,
 ):
-    
-    
     # Check for missing mandatory fields
     missing_fields = []
-    
     if not book_name:
         missing_fields.append("Title")
     if not authors:
@@ -548,8 +534,6 @@ def update_bookstage6(
         missing_fields.append("Availability while Enquiry")
     if not supplier_info:
         missing_fields.append("Supplier Information")
-    
-    # Return error if any mandatory field is missing
     if missing_fields:
         return {"error": f"The following fields are mandatory and must be filled: {', '.join(missing_fields)}"}
 
@@ -562,23 +546,23 @@ def update_bookstage6(
         cursor.execute("""
             UPDATE items
             SET 
-                modified_isbn = ?, 
-                book_name = ?, 
+                modified_isbn = ?,
+                book_name = ?,
                 sub_title =?,
                 authors = ?,
                 publisher = ?,
                 edition_or_year = ?,
-                number_of_copies =?, 
+                number_of_copies =?,
                 currency = ?, 
-                cost_currency = ?, 
+                cost_currency = ?,
                 availability_stage5 = ?,
                 supplier_info = ?,
                 remarks_stage5 = ?,
                 remarks_stage6 = ?
-            WHERE 
-                modified_isbn = ? AND 
+            WHERE
+                modified_isbn = ? AND
                 current_stage = 6
-        """, (modified_isbn,  book_name, sub_title,authors, 
+        """, (modified_isbn,  book_name, sub_title,authors,
               publisher, edition_or_year,number_of_copies,  currency, cost_currency, availability_stage5,supplier_info,remarks_stage5,remarks_stage6, modified_isbn))
         connection.commit()
         if cursor.rowcount == 0:
@@ -603,15 +587,12 @@ def move_to_stage7_from_stage6(isbn: int):
         FROM items
         WHERE isbn = ? AND current_stage = 6
     """, (isbn,))
-    
     result = cursor.fetchone()
     connection.close()
-    
     if result:
         # Check for missing mandatory fields
         missing_fields = []
         number_of_copies, book_name, publisher, edition_or_year, authors, currency, cost_currency,availability_stage5,supplier_info = result
-        
         if not number_of_copies:
             missing_fields.append("Number of copies")
         if not book_name:
@@ -631,12 +612,10 @@ def move_to_stage7_from_stage6(isbn: int):
         if not supplier_info:
             missing_fields.append("Supplier Information")
 
-
-
         # If there are missing fields, return an error message
         if missing_fields:
-            return {"error": f"The following fields are mandatory and must be filled: {', '.join(missing_fields)}"}
-        
+            return {"error": f"The following fields are mandatory and must be filled: {', '.join(missing_fields)}"
+                    }
         # If all mandatory fields are filled, proceed to move to stage 3
         if availability_stage5 == "Available":
             functions.update_stage(isbn, 6, 7)
@@ -644,8 +623,6 @@ def move_to_stage7_from_stage6(isbn: int):
         if availability_stage5 == "Not Available":
             functions.update_stage(isbn, 6, 11)
             return RedirectResponse("/stage11", status_code=302)
-        
-    
     return {"error": "No book found with the given ISBN in stage 6."}
 
 
@@ -656,7 +633,6 @@ def stage7(page: int = 1, sort_by: str = "date_stage_update", order: str = "desc
 @app.get("/downloadstage7")
 def download_csv():
     return download.download_stage7()
-
 
 @app.get("/move_to_stage8_from_stage7/{isbn}")
 def move_to_stage8_from_stage7(isbn: int):
@@ -672,14 +648,13 @@ def move_to_stage6_from_stage7(isbn: int):
 @app.get("/edit-book_stage7/{id}")
 async def edit_book(id: int):
     res = await view.edit_in_stage7(id)
-    frm = fill_form(res,BookRecommendations[id] )
+    frm = fill_form(res,items[id])
     return Titled('Edit Book Recommendation', frm)
 
 @app.post("/update-bookstage7")
 def update_bookstage7(isbn: int,  
                       remarks_stage7: str,
                       ):
-    
     connection = sqlite3.connect('data/library.db')
     cursor = connection.cursor()
 
@@ -687,9 +662,9 @@ def update_bookstage7(isbn: int,
         # Update the book details in the database
         cursor.execute("""
             UPDATE items
-            SET   
+            SET
                 remarks_stage7 = ?
-            WHERE 
+            WHERE
                 isbn = ? AND 
                 current_stage = 7
         """, ( remarks_stage7, isbn))
@@ -700,7 +675,6 @@ def update_bookstage7(isbn: int,
         # Rollback the transaction in case of error
         connection.rollback()
         return {"error": f"Database error: {str(e)}"}
-    
     finally:
         connection.close()
     return RedirectResponse(url="/stage7", status_code=302)
@@ -713,25 +687,21 @@ def stage8(page: int = 1, sort_by: str = "date_stage_update", order: str = "desc
 def download_csv():
     return download.download_stage8()
 
-
-
 @app.get("/move_to_stage7_from_stage8/{isbn}")
 def move_to_stage6_from_stage7(isbn: int):
     functions.update_stage(isbn,8,7)
     return RedirectResponse("/stage7", status_code=302)
 
-
 @app.get("/edit-book_stage8/{id}")
 async def edit_book(id: int):
     res = await view.edit_in_stage8(id)
-    frm = fill_form(res,BookRecommendations[id] )
+    frm = fill_form(res,items[id])
     return Titled('Edit Book Recommendation', frm)
 
 @app.post("/update-bookstage8")
 def update_bookstage7(isbn: int,  
                       remarks_stage8: str,
                       ):
-    
     connection = sqlite3.connect('data/library.db')
     cursor = connection.cursor()
 
@@ -739,7 +709,7 @@ def update_bookstage7(isbn: int,
         # Update the book details in the database
         cursor.execute("""
             UPDATE items
-            SET   
+            SET
                 remarks_stage8 = ?
             WHERE 
                 isbn = ? AND 
@@ -752,7 +722,6 @@ def update_bookstage7(isbn: int,
         # Rollback the transaction in case of error
         connection.rollback()
         return {"error": f"Database error: {str(e)}"}
-    
     finally:
         connection.close()
     return RedirectResponse(url="/stage8", status_code=302)
@@ -801,5 +770,12 @@ async def club_rows(data: RowData):
     except Exception as e:
         return JSONResponse(content={"message": f"Error clubbing rows: {str(e)}"}, status_code=500)
 
+@app.get("/download_clubbed/{c_id}")
+def download_clubbed(c_id: int):
+    return download.clubbed(c_id)
+
+@app.get("/edit_clubbed/{mixed_id}")
+def edit_clubbed(mixed_id):
+    return view.clubbed(mixed_id)
 # Initialize the server
 serve()

@@ -16,7 +16,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 
 # Initialize the FastAPI application
-app, rt, BookRecommendations, BookRecommendation = fast_app(
+app, rt, items, BookRecommendation = fast_app(
     'data/library.db',  # Path to your SQLite database
     id=int,  # Field type for the primary key
     isbn=int,  # ISBN of the book (should be string, not int)
@@ -762,14 +762,40 @@ async def club_rows(data: RowData):
     print(data.mixedRow)
     try:
         mixed_row = data.mixedRow
-        if len(mixed_row) < 2:
+        if len(mixed_row) <= 1:
             raise HTTPException(status_code=400, detail="Please select more than one row.")
-          
-        print(f"Processing rows: {mixed_row}")  
+        else:
+            with sqlite3.connect('data/library.db') as connection:
+                cursor = connection.cursor()
+                cursor.execute(""" select max(c_id) from items """)
+                c_id = cursor.fetchone()[0]
+                if c_id == 'None' or c_id == None:
+                    c_id = 0
+                print(c_id)
+                c_id = int(c_id)
+            for row in mixed_row:
+                print(row)
+                if "|" in row:
+                    indices = row.split("|")
+                    print(indices)
+                    for index in indices:
+                        id = int(index.strip())
+                        book = items(where=f"id ={id}")[0]
+                        print(book)
+                        book.clubbed = True
+                        book.c_id = c_id+1
+                        items.update(book)
+                else:
+                    id = int(row.strip())
+                    print(id)
+                    book = items(where=f"id ={id}")[0]
+                    print(book)
+                    book.clubbed = True
+                    new_c_id = c_id+1
+                    book.c_id = new_c_id
+                    items.update(book)
 
-        #combined_row = f"Combined: {row1} + {row2}"
-        #print(f"Combined row: {combined_row}") 
-        
+            print(f"Processing rows: {mixed_row}")
         return {"message": f"Rows successfully clubbed"}
 
     except Exception as e:

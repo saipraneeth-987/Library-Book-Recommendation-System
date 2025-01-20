@@ -158,6 +158,9 @@ def move_to_stage3_from_stage2(isbn: int):
         if availability_stage2 == "Yes":
             functions.update_stage(isbn, 2, 9)
             return RedirectResponse("/duplicate", status_code=302)
+        if availability_stage2 == "No Book found":
+            functions.update_stage(isbn, 2, 9)
+            return RedirectResponse("/duplicate", status_code=302)
         
     
     return {"error": "No book found with the given ISBN in stage 2."}

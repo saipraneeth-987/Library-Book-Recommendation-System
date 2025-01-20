@@ -498,6 +498,7 @@ async def edit_in_stage2(id: int):
                 Option("Select Availability", value="", disabled=True, selected=True),
                 Option("Yes", value="Yes"),
                 Option("No", value="No"),
+                Option("No Book found", value="No Book found"),
                 id="availability_stage2",
                 style="padding: 5px; min-width: 120px; border:1.3px solid #D369A3;"
             ),
@@ -526,9 +527,9 @@ async def edit_in_stage2(id: int):
                 const data = await response.json();
                 console.log(data)
                 if (data.error) {
-                    authors.value = "Error: " + data.error;
+                    title.value = "Error: " + data.error;
                     subtitle.value = "";
-                    title.value = "";
+                    authors.value = "";
                     publishers.value = "";
                 } else {
                     console.log("found")
@@ -2512,7 +2513,6 @@ def clubbed(c_id):
     items = fetch.clubbed(c_id)
     table = Table(
         Tr(
-            Th("Select", style="font-weight: 1000; text-align: center;"),
             Th("ID", style="font-weight: 1000; text-align: center;"),
             Th("ISBN", style=" align-items: center; font-weight: 1000;"),
             Th("Title", style="font-weight: 1000; text-align: center;"),
@@ -2532,11 +2532,6 @@ def clubbed(c_id):
         ),
         *[
             Tr(
-                Td(
-                Input(type="checkbox", name="row_checkbox", value=item[0], style="margin: auto;"),  # Checkbox in each row
-                style="text-align: center; padding: 4px;"
-            ),
-
                 Td(item[0], style="font-size: smaller; padding: 4px;"),
                 Td(item[1], style="font-size: smaller; padding: 4px;"),
                 Td(item[2], style="font-size: smaller; padding: 4px;"),

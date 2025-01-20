@@ -59,12 +59,13 @@ def stage3():
     cursor.execute("""
         SELECT id, isbn, book_name, sub_title, authors, publisher, edition_or_year, 
             number_of_copies, currency, recommender, purpose, cost_currency, status, 
-            approval_remarks, date_stage_update,clubbed,c_id
+            approval_remarks, date_stage_update,COALESCE(clubbed,0),c_id
         FROM items
         WHERE current_stage = 3 and (clubbed = false or clubbed is null)
         ORDER BY date_stage_update DESC
     """)
     items = cursor.fetchall()
+    
     cursor.execute("""
         SELECT GROUP_CONCAT(id, ' | '), GROUP_CONCAT(modified_isbn,' | '),GROUP_CONCAT( book_name, ' | '),GROUP_CONCAT( sub_title, ' | '),GROUP_CONCAT( authors, ' | '),GROUP_CONCAT( publisher, ' | '),GROUP_CONCAT( edition_or_year, ' | '), GROUP_CONCAT(  number_of_copies, ' | '),GROUP_CONCAT( currency, ' | '),GROUP_CONCAT( recommender, ' | '),GROUP_CONCAT( purpose, ' | '),GROUP_CONCAT( cost_currency, ' | '),GROUP_CONCAT( status, ' | '), GROUP_CONCAT(  approval_remarks, ' | '),GROUP_CONCAT( date_stage_update, ' | '),clubbed,c_id
         FROM items

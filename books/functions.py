@@ -177,8 +177,8 @@ async def load(backup_file: UploadFile):
 
     insert_query = """
     INSERT OR IGNORE INTO items 
-    (isbn, recommender, email, number_of_copies, purpose, remarks, date, current_stage) 
-    VALUES (?, ?, ?, ?, ?, ?, ?, 1)
+    (isbn, recommender, email, number_of_copies, purpose, remarks, date, current_stage,clubbed,c_id) 
+    VALUES (?, ?, ?, ?, ?, ?, ?, 1,0,0)
     """
 
     check_query = """

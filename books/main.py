@@ -774,8 +774,18 @@ async def club_rows(data: RowData):
 def download_clubbed(c_id: int):
     return download.clubbed(c_id)
 
-@app.get("/edit_clubbed/{mixed_id}")
-def edit_clubbed(mixed_id):
-    return view.clubbed(mixed_id)
+@app.get("/edit_clubbed/{c_id}")
+def edit_clubbed(c_id: int):
+    return view.clubbed(c_id)
+
+@app.get("/remove-club/{id}")
+def remove_clubbed(id: int):
+    print(id)
+    book = items(where=f"id ={id}")[0]
+    print(book)
+    book.clubbed = False
+    book.c_id = None
+    items.update(book)
+    return RedirectResponse("/stage3", status_code=302)
 # Initialize the server
 serve()

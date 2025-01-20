@@ -134,6 +134,10 @@ def filter_by_date_search(all_items, date_range):
             continue
     return filtered_items
 
+def is_valid_isbn(isbn: str) -> bool:
+    return bool(re.match(r'^\d{10}$', isbn)) or bool(re.match(r'^\d{13}$', isbn))
+
+
 async def load(backup_file: UploadFile):
     contents = await backup_file.read()
     contents = contents.decode("utf-8")  # Decode the uploaded file's content
@@ -185,6 +189,7 @@ async def load(backup_file: UploadFile):
         try:
             # Extract necessary fields
             isbn = row[3]  # Assuming ISBN is at the correct column index
+            
             recommender = row[18]  # Assuming recommender is at the correct column index
             email = row[1]  # Assuming email is at the correct column index
             number_of_copies = int(row[5])  # Assuming number of copies is at the correct column index
@@ -198,7 +203,8 @@ async def load(backup_file: UploadFile):
             count = cursor.fetchone()[0]
             if count > 0:
                 continue  # Skip if duplicate found
-
+            if not is_valid_isbn(isbn):
+                continue
             cursor.execute(insert_query, (isbn, recommender, email, number_of_copies, purpose, remarks, date))
         except Exception as e:
             print(f"Error processing row {row}: {e}")

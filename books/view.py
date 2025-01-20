@@ -6,13 +6,7 @@ import functions
 
 #items_per_page: int = 10
 search1:str=""
-all_stages = fetch.allstage()
-if search1:
-    search_lower = search.lower()
-    all_items = [
-        item for item in all_stages
-        if any(search_lower in str(value).lower() for value in item)
-    ]
+
 def stage1(page: int = 1, sort_by: str = "date", order: str = "desc", search: str = "", date_range: str = "all", items_per_page: int = 10):
     # Fetch items and apply filters
     all_items = fetch.stage1()
@@ -22,7 +16,13 @@ def stage1(page: int = 1, sort_by: str = "date", order: str = "desc", search: st
         reverse = order == "desc"
         column_index = {"date": 6, "email": 2}[sort_by]
         all_items.sort(key=lambda x: x[column_index], reverse=reverse)
-
+    all_stages = fetch.allstage()
+    if search1:
+        search_lower = search.lower()
+        all_items = [
+            item for item in all_stages
+            if any(search_lower in str(value).lower() for value in item)
+        ]
     # Implement the search functionality
     if search:
         search_lower = search.lower()
@@ -2079,7 +2079,13 @@ def stage7(page: int = 1, sort_by: str = "date_stage_update", order: str = "asc"
             item for item in all_items
             if any(search_lower in str(value).lower() for value in item)
         ]
-
+    all_stages = fetch.allstage()
+    if search1:
+        search_lower = search.lower()
+        all_items = [
+            item for item in all_stages
+            if any(search_lower in str(value).lower() for value in item)
+        ]
     # Sorting logic
     if sort_by in ["date_stage_update"]:
         reverse = order == "desc"
@@ -2289,6 +2295,14 @@ def stage8(page: int = 1, sort_by: str = "date_stage_update", order: str = "asc"
         search_lower = search.lower()
         all_items = [
             item for item in all_items
+            if any(search_lower in str(value).lower() for value in item)
+        ]
+
+    all_stages = fetch.allstage()
+    if search1:
+        search_lower = search.lower()
+        all_items = [
+            item for item in all_stages
             if any(search_lower in str(value).lower() for value in item)
         ]
 
@@ -2636,21 +2650,7 @@ def globalsearch(page: int = 1, sort_by: str = "date", order: str = "desc", sear
             style="text-decoration: none; font-size: small; margin-left: 5px;"
         )
 
-    date_range_options = Form(
-        Group(
-            Input(type="hidden", name="search", value=search),
-            Input(type="radio", name="date_range", value="all", id="all", checked=(date_range == "all"),onchange="this.form.submit()"),
-            Label("All", for_="all", style="margin-right: 10px;"),
-            Input(type="radio", name="date_range", value="1month", id="1month", checked=(date_range == "1month"),onchange="this.form.submit()"),
-            Label("Last 1 Month", for_="1month", style="margin-right: 10px;"),
-            Input(type="radio", name="date_range", value="3months", id="3months", checked=(date_range == "3months"),onchange="this.form.submit()"),
-            Label("Last 3 Months", for_="3months", style="margin-right: 10px;"),
-            Input(type="radio", name="date_range", value="6months", id="6months", checked=(date_range == "6months"),onchange="this.form.submit()"),
-            Label("Last 6 Months", for_="6months"),
-            style="margin-bottom: 20px; display: flex; align-items: center;"
-        ),
-        action="/search", method="get"
-    )
+    
     stage_mapping = {
         1: "Initiated",
         2: "Processing",
@@ -2670,10 +2670,10 @@ def globalsearch(page: int = 1, sort_by: str = "date", order: str = "desc", sear
             Th("ISBN", style="font-weight: 1000; text-align: center;"),
             Th("Modified_ISBN", style="font-weight: 1000; text-align: center;"),
             Th("Recommender", style="font-weight: 1000; text-align: center;"),
-            Th(Div("Email", create_sort_link("email"), style="""display: inline-flex; align-items: center; font-weight: 1000; text-align: center; justify-content: center;width: 100%; height: 100%;""")),
+            Th(Div("Email", style="""display: inline-flex; align-items: center; font-weight: 1000; text-align: center; justify-content: center;width: 100%; height: 100%;""")),
             Th("Title", style="font-weight: 1000; text-align: center;"),
             Th("Current stage", style="font-weight: 1000; text-align: center;"),
-            Th(Div("Recent action Date", create_sort_link("date"), style="""display: inline-flex; align-items: center; font-weight: 1000; text-align: center; justify-content: center;width: 100%; height: 100%;""")),
+            Th(Div("Recent action Date",  style="""display: inline-flex; align-items: center; font-weight: 1000; text-align: center; justify-content: center;width: 100%; height: 100%;""")),
         ),
         *[
             Tr(
@@ -2695,9 +2695,7 @@ def globalsearch(page: int = 1, sort_by: str = "date", order: str = "desc", sear
 
     card = Card(
         H3("Search"),
-        date_range_options,
-        table,  
-        pagination_controls,  # Display pagination controls
+        table,    
         header=Div(
             A("Initiated", href="/", role="button", style="margin-left: 10px; white-space: nowrap ; height:50px; font-weight: 700;"),
             A("Processing", href="/stage2", role="button", style="margin-left: 10px; white-space: nowrap ; height:50px; font-weight: 700;"),

@@ -57,7 +57,7 @@ def stage3():
     connection = sqlite3.connect('data/library.db')
     cursor = connection.cursor()
     cursor.execute("""
-        SELECT id, modified_isbn, book_name, sub_title, authors, publisher, edition_or_year, 
+        SELECT id, isbn, book_name, sub_title, authors, publisher, edition_or_year, 
             number_of_copies, currency, recommender, purpose, cost_currency, status, 
             approval_remarks, date_stage_update,clubbed,c_id
         FROM items
@@ -106,7 +106,7 @@ def stage4():
     connection = sqlite3.connect('data/library.db')
     cursor = connection.cursor()
     cursor.execute("""
-        SELECT id, modified_isbn, book_name, sub_title, authors, publisher, edition_or_year, 
+        SELECT id, isbn, book_name, sub_title, authors, publisher, edition_or_year, 
             number_of_copies, currency, recommender, purpose, cost_currency, status, 
             approval_remarks, date_stage_update
         FROM items
@@ -129,7 +129,7 @@ def notapproved():
     connection = sqlite3.connect('data/library.db')
     cursor = connection.cursor()
     cursor.execute("""
-        SELECT id, modified_isbn, book_name, sub_title, authors, publisher, edition_or_year, 
+        SELECT id, isbn, book_name, sub_title, authors, publisher, edition_or_year, 
             number_of_copies, currency, recommender, purpose, cost_currency, status, 
             approval_remarks, date_stage_update
         FROM items
@@ -152,7 +152,7 @@ def stage5():
     connection = sqlite3.connect('data/library.db')
     cursor = connection.cursor()
     cursor.execute("""
-        SELECT id, modified_isbn, book_name, sub_title, authors, publisher, edition_or_year, 
+        SELECT id, isbn, book_name, sub_title, authors, publisher, edition_or_year, 
             number_of_copies, currency, recommender, purpose, cost_currency, status, 
             approval_remarks, date_stage_update,availability_stage5,supplier_info,remarks_stage5
         FROM items
@@ -175,7 +175,7 @@ def stage11():
     connection = sqlite3.connect('data/library.db')
     cursor = connection.cursor()
     cursor.execute("""
-        SELECT id,modified_isbn, book_name, sub_title, authors, publisher, edition_or_year, 
+        SELECT id,isbn, book_name, sub_title, authors, publisher, edition_or_year, 
             number_of_copies, currency, recommender, purpose, cost_currency, status, 
             approval_remarks, date_stage_update,availability_stage5,supplier_info,remarks_stage5
         FROM items
@@ -198,7 +198,7 @@ def stage6():
     connection = sqlite3.connect('data/library.db')
     cursor = connection.cursor()
     cursor.execute("""
-        SELECT id, modified_isbn, book_name, sub_title, authors, publisher, edition_or_year, 
+        SELECT id, isbn, book_name, sub_title, authors, publisher, edition_or_year, 
             number_of_copies, currency, recommender, purpose, cost_currency, status, 
             approval_remarks, date_stage_update,availability_stage5,supplier_info,remarks_stage5,remarks_stage6
         FROM items
@@ -221,7 +221,7 @@ def stage7():
     connection = sqlite3.connect('data/library.db')
     cursor = connection.cursor()
     cursor.execute("""
-        SELECT id, modified_isbn, book_name, sub_title, authors, publisher, edition_or_year, 
+        SELECT id, isbn, book_name, sub_title, authors, publisher, edition_or_year, 
             number_of_copies, currency, recommender, purpose, cost_currency, status, 
             approval_remarks, date_stage_update,availability_stage5,supplier_info,remarks_stage5,remarks_stage6,remarks_stage7
         FROM items
@@ -244,7 +244,7 @@ def stage8():
     connection = sqlite3.connect('data/library.db')
     cursor = connection.cursor()
     cursor.execute("""
-        SELECT id, modified_isbn, book_name, sub_title, authors, publisher, edition_or_year, 
+        SELECT id, isbn, book_name, sub_title, authors, publisher, edition_or_year, 
             number_of_copies, currency, recommender, purpose, cost_currency, status, 
             approval_remarks, date_stage_update,availability_stage5,supplier_info,remarks_stage5,remarks_stage6,remarks_stage7,remarks_stage8
         FROM items
@@ -268,7 +268,7 @@ def clubbed(c_id: int):
     cursor = connection.cursor()
     print(c_id)
     cursor.execute("""
-        SELECT id, modified_isbn, book_name, sub_title, authors, publisher, edition_or_year,
+        SELECT id, isbn, book_name, sub_title, authors, publisher, edition_or_year,
                number_of_copies, currency, recommender, purpose, cost_currency, status,
                approval_remarks, date_stage_update, clubbed, c_id
         FROM items
@@ -283,7 +283,7 @@ def allstage():
     connection = sqlite3.connect('data/library.db')
     cursor = connection.cursor()
     cursor.execute("""
-        SELECT isbn,modified_isbn,recommender,email,book_name,current_stage,date_stage_update from items
+        SELECT isbn,isbn,recommender,email,book_name,current_stage,date_stage_update from items
         ORDER BY date DESC
     """)
 

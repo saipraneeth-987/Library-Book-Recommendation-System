@@ -260,3 +260,23 @@ def stage8():
 
 
     return items
+
+def allstage():
+    connection = sqlite3.connect('data/library.db')
+    cursor = connection.cursor()
+    cursor.execute("""
+        SELECT isbn,modified_isbn,recommender,email,book_name,current_stage,date_stage_update from items
+        ORDER BY date DESC
+    """)
+
+    items = cursor.fetchall()
+    connection.close()
+
+    # Convert the date to proper datetime format and sort if necessary
+    
+    # Sort by date in descending order after conversion
+    items.sort(key=lambda x: x[5] if x[5] is not None else "", reverse=True)
+
+
+    return items
+

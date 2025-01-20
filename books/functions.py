@@ -20,25 +20,22 @@ def update_stage(isbn: int, current_stage: int,new_stage: int):
         connection.commit()
 
 def get_book_details(isbn):
-    if(isbn):
-        api_key = "AIzaSyBVqOwuDKlY35_CSFSuhWzcAP4MIGnqLLU"
-        url = f"https://www.googleapis.com/books/v1/volumes?q=isbn:{isbn}&key={api_key}"
-        response = requests.get(url)
-        if response.status_code == 200:
-            data = response.json()
-            print(data)
-            if "items" in data:
-                book = data["items"][0]["volumeInfo"]
-                title = book.get("title", "Unknown Title") + ": " + book.get("subtitle")
-                authors = ", ".join(book.get("authors", ["Unknown Author"]))
-                publishers = book.get("publisher", ["Unknown Publisher"])
-                return {"title": title, "authors": authors, "publisher":publishers}
-            else:
-                return {"error": "Book not found"}
+    api_key = "AIzaSyBVqOwuDKlY35_CSFSuhWzcAP4MIGnqLLU"
+    url = f"https://www.googleapis.com/books/v1/volumes?q=isbn:{isbn}&key={api_key}"
+    response = requests.get(url)
+    if response.status_code == 200:
+        data = response.json()
+        print(data)
+        if "items" in data:
+            book = data["items"][0]["volumeInfo"]
+            title = book.get("title", "Unknown Title") + ": " + book.get("subtitle")
+            authors = ", ".join(book.get("authors", ["Unknown Author"]))
+            publishers = book.get("publisher", ["Unknown Publisher"])
+            return {"title": title, "authors": authors, "publisher":publishers}
         else:
-            return {f"Failed to fetch details: {response.status_code}"}
+            return {"error": "Book not found"}
     else:
-        return {""}
+        return {f"Failed to fetch details: {response.status_code}"}
 
 
 def filter_by_date(all_items, date_range):
@@ -110,6 +107,28 @@ def filter_by_date3(all_items, date_range):
             continue
     return filtered_items
 
+def filter_by_date_search(all_items, date_range):
+    today = datetime.today()
+    if date_range == '1month':
+        start_date = today - timedelta(days=30)
+        print(start_date)
+    elif date_range == '3months':
+        start_date = today - timedelta(days=90)
+    elif date_range == '6months':
+        start_date = today - timedelta(days=180)
+    else:
+        return all_items  
+
+    filtered_items = []
+    for item in all_items:
+        try:
+            item_date = datetime.strptime(item[6], "%Y-%m-%d %H:%M:%S.%f")
+            if item_date >= start_date:
+                filtered_items.append(item)
+        except Exception as e:
+            print(f"Error parsing date for item: {item} - {e}")
+            continue
+    return filtered_items
 
 async def load(backup_file: UploadFile):
     contents = await backup_file.read()

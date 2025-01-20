@@ -5,12 +5,19 @@ import functions
 
 
 items_per_page: int = 10
-
+search1:str=""
+all_stages = fetch.allstage()
+if search1:
+    search_lower = search.lower()
+    all_items = [
+        item for item in all_stages
+        if any(search_lower in str(value).lower() for value in item)
+    ]
 def stage1(page: int = 1, sort_by: str = "date", order: str = "desc", search: str = "", date_range: str = "all", items_per_page: int = 10):
     # Fetch items and apply filters
     all_items = fetch.stage1()
     all_items = functions.filter_by_date(all_items, date_range)
-
+    
     # Apply sorting only for 'date' and 'email' columns
     if sort_by in ["date", "email"]:
         reverse = order == "desc"
@@ -24,7 +31,7 @@ def stage1(page: int = 1, sort_by: str = "date", order: str = "desc", search: st
             item for item in all_items
             if any(search_lower in str(value).lower() for value in item)
         ]
-
+    
     # Total items and pagination
     total_items = len(all_items)
     total_pages = (total_items + items_per_page - 1) // items_per_page
@@ -147,6 +154,16 @@ def stage1(page: int = 1, sort_by: str = "date", order: str = "desc", search: st
         action="/", method="get"
     )
 
+    global_search_box = Form(
+        Group(
+            Input(type="text", name="search1", value=search1, placeholder="Search...", style="margin-right: 10px; padding: 5px;"),
+            Input(type="hidden", name="date_range", value=date_range), 
+            Button("Search", type="submit", style="font-weight: 600;"),
+            style="display: flex; align-items: center;"
+        ),
+        action="/search", method="get"
+    )
+
     restore_form = Form(
         Group(
             Input(type="file", name="backup_file", accept=".csv", required=True, style="margin-right: 10px;"),
@@ -167,6 +184,7 @@ def stage1(page: int = 1, sort_by: str = "date", order: str = "desc", search: st
         table,  
         pagination_controls,  # Display pagination controls
         header=Div(
+             A("Globalsearch", href="/search", role="button", style="margin-left: 10px; white-space: nowrap ; height:50px; font-weight: 700;"),
             A("Processing", href="/stage2", role="button", style="margin-left: 10px; white-space: nowrap ; height:50px; font-weight: 700;"),
             A("Approval Pending", href="/stage3", role="button", style="margin-left: 10px; white-space: nowrap ; height:50px; font-weight: 700;"),
             A("Approved", href="/stage4", role="button", style="margin-left: 10px; white-space: nowrap ; height:50px; font-weight: 700;"),
@@ -180,6 +198,7 @@ def stage1(page: int = 1, sort_by: str = "date", order: str = "desc", search: st
             A("Download All", href="/downloadentire", role="button", style="margin-left: 10px; white-space: nowrap ; height:50px; font-weight: 700;"),
             A("Download Initiated books", href="/downloadstage1", role="button", style="margin-left: 10px; white-space: nowrap ; height:50px; font-weight: 700;"),
             restore_form,
+            global_search_box,
             style="display: flex; align-items: center; justify-content: flex-start; padding: 20px; height: 50px; font-weight: 700;"
         ),
     )
@@ -249,7 +268,15 @@ def stage2(page: int = 1, sort_by: str = "date", order: str = "desc", search: st
         ),
         action="/stage2", method="get"
     )
-
+    global_search_box = Form(
+        Group(
+            Input(type="text", name="search1", value=search1, placeholder="Search...", style="margin-right: 10px; padding: 5px;"),
+            Input(type="hidden", name="date_range", value=date_range), 
+            Button("Search", type="submit", style="font-weight: 600;"),
+            style="display: flex; align-items: center;"
+        ),
+        action="/search", method="get"
+    )
     def get_sort_icon(column):
         if sort_by == column:
             return "▲" if order == "asc" else "▼"
@@ -354,6 +381,7 @@ def stage2(page: int = 1, sort_by: str = "date", order: str = "desc", search: st
             A("Not Available", href="/stage11", role="button", style="margin-left: 10px; white-space: nowrap ; height:50px; font-weight: 700;"),
             A("Download All", href="/downloadentire", role="button", style="margin-left: 10px; white-space: nowrap ; height:50px; font-weight: 700;"),
             A("Download Stage2", href="/downloadstage2", role="button", style="margin-left: 10px; white-space: nowrap ; height:50px; font-weight: 700;"),
+            global_search_box,
             style="display: flex; gap: 10px;"  # Flexbox for layout
         )
     )
@@ -597,6 +625,15 @@ def stage3(page: int = 1, sort_by: str = "date_stage_update", order: str = "asc"
         ),
         action="/stage3", method="get"
     )
+    global_search_box = Form(
+        Group(
+            Input(type="text", name="search1", value=search1, placeholder="Search...", style="margin-right: 10px; padding: 5px;"),
+            Input(type="hidden", name="date_range", value=date_range), 
+            Button("Search", type="submit", style="font-weight: 600;"),
+            style="display: flex; align-items: center;"
+        ),
+        action="/search", method="get"
+    )
     def get_sort_icon(column):
         if sort_by == column:
             return "▲" if order == "asc" else "▼"
@@ -693,6 +730,7 @@ def stage3(page: int = 1, sort_by: str = "date_stage_update", order: str = "asc"
             A("Not Available", href="/stage11", role="button", style="margin-left: 10px; white-space: nowrap ; height:50px; font-weight: 700;"),
             A("Download All", href="/downloadentire", role="button", style="margin-left: 10px; white-space: nowrap ; height:50px; font-weight: 700;"),
             A("Download approval pending books", href="/downloadstage3", role="button", style="margin-left: 10px; white-space: nowrap ; height:50px; font-weight: 700;"),
+            global_search_box,
             style="display: flex; gap: 10px;"  # Flexbox for layout
         )
     )
@@ -795,6 +833,15 @@ def duplicate(page: int = 1, sort_by: str = "date", order: str = "desc", search:
         ),
         action="/duplicate", method="get"
     )
+    global_search_box = Form(
+        Group(
+            Input(type="text", name="search1", value=search1, placeholder="Search...", style="margin-right: 10px; padding: 5px;"),
+            Input(type="hidden", name="date_range", value=date_range), 
+            Button("Search", type="submit", style="font-weight: 600;"),
+            style="display: flex; align-items: center;"
+        ),
+        action="/search", method="get"
+    )
 
     def get_sort_icon(column):
         if sort_by == column:
@@ -896,6 +943,7 @@ def duplicate(page: int = 1, sort_by: str = "date", order: str = "desc", search:
             A("Not Available", href="/stage11", role="button", style="margin-left: 10px; white-space: nowrap ; height:50px; font-weight: 700;"),
             A("Download All", href="/downloadentire", role="button", style="margin-left: 10px; white-space: nowrap ; height:50px; font-weight: 700;"),
             A("Download duplicates", href="/downloadduplicate", role="button", style="margin-left: 10px; white-space: nowrap ; height:50px; font-weight: 700;"),
+            global_search_box,
             style="display: flex; gap: 10px;"  # Flexbox for layout
         )
     )
@@ -968,6 +1016,15 @@ def stage4(page: int = 1, sort_by: str = "date_stage_update", order: str = "asc"
             style="display: flex; align-items: center;"
         ),
         action="/stage4", method="get"
+    )
+    global_search_box = Form(
+        Group(
+            Input(type="text", name="search1", value=search1, placeholder="Search...", style="margin-right: 10px; padding: 5px;"),
+            Input(type="hidden", name="date_range", value=date_range), 
+            Button("Search", type="submit", style="font-weight: 600;"),
+            style="display: flex; align-items: center;"
+        ),
+        action="/search", method="get"
     )
     def get_sort_icon(column):
         if sort_by == column:
@@ -1064,6 +1121,7 @@ def stage4(page: int = 1, sort_by: str = "date_stage_update", order: str = "asc"
             A("Not Available", href="/stage11", role="button", style="margin-left: 10px; white-space: nowrap ; height:50px; font-weight: 700;"),
             A("Download All", href="/downloadentire", role="button", style="margin-left: 10px; white-space: nowrap ; height:50px; font-weight: 700;"),
             A("Download Approved books", href="/downloadstage4", role="button", style="margin-left: 10px; white-space: nowrap ; height:50px; font-weight: 700;"),
+            global_search_box,
             style="display: flex; gap: 10px;"  # Flexbox for layout
         )
     )
@@ -1136,6 +1194,15 @@ def notapproved(page: int = 1, sort_by: str = "date_stage_update", order: str = 
             style="display: flex; align-items: center;"
         ),
         action="/notapproved", method="get"
+    )
+    global_search_box = Form(
+        Group(
+            Input(type="text", name="search1", value=search1, placeholder="Search...", style="margin-right: 10px; padding: 5px;"),
+            Input(type="hidden", name="date_range", value=date_range), 
+            Button("Search", type="submit", style="font-weight: 600;"),
+            style="display: flex; align-items: center;"
+        ),
+        action="/search", method="get"
     )
     def get_sort_icon(column):
         if sort_by == column:
@@ -1231,6 +1298,7 @@ def notapproved(page: int = 1, sort_by: str = "date_stage_update", order: str = 
             A("Not Available", href="/stage11", role="button", style="margin-left: 10px; white-space: nowrap ; height:50px; font-weight: 700;"),
             A("Download All", href="/downloadentire", role="button", style="margin-left: 10px; white-space: nowrap ; height:50px; font-weight: 700;"),
             A("Download Approved books", href="/downloadnotapproved", role="button", style="margin-left: 10px; white-space: nowrap ; height:50px; font-weight: 700;"),
+            global_search_box,
             style="display: flex; gap: 10px;"  # Flexbox for layout
         )
     )
@@ -1303,6 +1371,15 @@ def stage5(page: int = 1, sort_by: str = "date_stage_update", order: str = "asc"
             style="display: flex; align-items: center;"
         ),
         action="/stage5", method="get"
+    )
+    global_search_box = Form(
+        Group(
+            Input(type="text", name="search1", value=search1, placeholder="Search...", style="margin-right: 10px; padding: 5px;"),
+            Input(type="hidden", name="date_range", value=date_range), 
+            Button("Search", type="submit", style="font-weight: 600;"),
+            style="display: flex; align-items: center;"
+        ),
+        action="/search", method="get"
     )
     def get_sort_icon(column):
         if sort_by == column:
@@ -1406,6 +1483,7 @@ def stage5(page: int = 1, sort_by: str = "date_stage_update", order: str = "asc"
             A("Not Available", href="/stage11", role="button", style="margin-left: 10px; white-space: nowrap ; height:50px; font-weight: 700;"),
             A("Download All", href="/downloadentire", role="button", style="margin-left: 10px; white-space: nowrap ; height:50px; font-weight: 700;"),
             A("Download books here", href="/downloadstage5", role="button", style="margin-left: 10px; white-space: nowrap ; height:50px; font-weight: 700;"),
+            global_search_box,
             style="display: flex; gap: 10px;"  # Flexbox for layout
         )
     )
@@ -1519,6 +1597,15 @@ def stage11(page: int = 1, sort_by: str = "date_stage_update", order: str = "asc
         ),
         action="/stage11", method="get"
     )
+    global_search_box = Form(
+        Group(
+            Input(type="text", name="search1", value=search1, placeholder="Search...", style="margin-right: 10px; padding: 5px;"),
+            Input(type="hidden", name="date_range", value=date_range), 
+            Button("Search", type="submit", style="font-weight: 600;"),
+            style="display: flex; align-items: center;"
+        ),
+        action="/search", method="get"
+    )
     def get_sort_icon(column):
         if sort_by == column:
             return "▲" if order == "asc" else "▼"
@@ -1619,6 +1706,7 @@ def stage11(page: int = 1, sort_by: str = "date_stage_update", order: str = "asc
             A("Not Approved", href="/notapproved", role="button", style="margin-left: 10px; white-space: nowrap ; height:50px; font-weight: 700;"),
             A("Download All", href="/downloadentire", role="button", style="margin-left: 10px; white-space: nowrap ; height:50px; font-weight: 700;"),
             A("Download books here", href="/downloadstage11", role="button", style="margin-left: 10px; white-space: nowrap ; height:50px; font-weight: 700;"),
+            global_search_box,
             style="display: flex; gap: 10px;"  # Flexbox for layout
         )
     )
@@ -1691,6 +1779,15 @@ def stage6(page: int = 1, sort_by: str = "date_stage_update", order: str = "asc"
             style="display: flex; align-items: center;"
         ),
         action="/stage6", method="get"
+    )
+    global_search_box = Form(
+        Group(
+            Input(type="text", name="search1", value=search1, placeholder="Search...", style="margin-right: 10px; padding: 5px;"),
+            Input(type="hidden", name="date_range", value=date_range), 
+            Button("Search", type="submit", style="font-weight: 600;"),
+            style="display: flex; align-items: center;"
+        ),
+        action="/search", method="get"
     )
     def get_sort_icon(column):
         if sort_by == column:
@@ -1796,6 +1893,7 @@ def stage6(page: int = 1, sort_by: str = "date_stage_update", order: str = "asc"
             A("Not Available", href="/stage11", role="button", style="margin-left: 10px; white-space: nowrap ; height:50px; font-weight: 700;"),
             A("Download All", href="/downloadentire", role="button", style="margin-left: 10px; white-space: nowrap ; height:50px; font-weight: 700;"),
             A("Download books here", href="/downloadstage6", role="button", style="margin-left: 10px; white-space: nowrap ; height:50px; font-weight: 700;"),
+            global_search_box,
             style="display: flex; gap: 10px;"  # Flexbox for layout
         )
     )
@@ -1991,6 +2089,15 @@ def stage7(page: int = 1, sort_by: str = "date_stage_update", order: str = "asc"
         ),
         action="/stage7", method="get"
     )
+    global_search_box = Form(
+        Group(
+            Input(type="text", name="search1", value=search1, placeholder="Search...", style="margin-right: 10px; padding: 5px;"),
+            Input(type="hidden", name="date_range", value=date_range), 
+            Button("Search", type="submit", style="font-weight: 600;"),
+            style="display: flex; align-items: center;"
+        ),
+        action="/search", method="get"
+    )
     def get_sort_icon(column):
         if sort_by == column:
             return "▲" if order == "asc" else "▼"
@@ -2097,6 +2204,7 @@ def stage7(page: int = 1, sort_by: str = "date_stage_update", order: str = "asc"
             A("Not Available", href="/stage11", role="button", style="margin-left: 10px; white-space: nowrap ; height:50px; font-weight: 700;"),
             A("Download All", href="/downloadentire", role="button", style="margin-left: 10px; white-space: nowrap ; height:50px; font-weight: 700;"),
             A("Download books here", href="/downloadstage7", role="button", style="margin-left: 10px; white-space: nowrap ; height:50px; font-weight: 700;"),
+            global_search_box,
             style="display: flex; gap: 10px;"  # Flexbox for layout
         )
     )
@@ -2192,6 +2300,15 @@ def stage8(page: int = 1, sort_by: str = "date_stage_update", order: str = "asc"
             style="display: flex; align-items: center;"
         ),
         action="/stage8", method="get"
+    )
+    global_search_box = Form(
+        Group(
+            Input(type="text", name="search1", value=search1, placeholder="Search...", style="margin-right: 10px; padding: 5px;"),
+            Input(type="hidden", name="date_range", value=date_range), 
+            Button("Search", type="submit", style="font-weight: 600;"),
+            style="display: flex; align-items: center;"
+        ),
+        action="/search", method="get"
     )
     def get_sort_icon(column):
         if sort_by == column:
@@ -2300,6 +2417,7 @@ def stage8(page: int = 1, sort_by: str = "date_stage_update", order: str = "asc"
             A("Not Available", href="/stage11", role="button", style="margin-left: 10px; white-space: nowrap ; height:50px; font-weight: 700;"),
             A("Download All", href="/downloadentire", role="button", style="margin-left: 10px; white-space: nowrap ; height:50px; font-weight: 700;"),
             A("Download books here", href="/downloadstage8", role="button", style="margin-left: 10px; white-space: nowrap ; height:50px; font-weight: 700;"),
+            global_search_box,
             style="display: flex; gap: 10px;"  # Flexbox for layout
         )
     )
@@ -2327,3 +2445,162 @@ async def edit_in_stage8(id: int):
 
     )
     return res
+
+
+def globalsearch(page: int = 1, sort_by: str = "date", order: str = "desc", search: str = search1, date_range: str = "all", items_per_page: int = 10):
+    # Fetch items and apply filters
+    all_items = fetch.allstage()
+    all_items = functions.filter_by_date_search(all_items, date_range)
+
+    # Apply sorting only for 'date' and 'email' columns
+    if sort_by in ["date_stage_update", "email"]:
+        reverse = order == "desc"
+        column_index = {"date_stage_update": 6, "email": 3}[sort_by]
+        all_items.sort(key=lambda x: x[column_index] if x[column_index] is not None else "", reverse=reverse)
+
+
+    # Implement the search functionality
+    if search:
+        search_lower = search.lower()
+        all_items = [
+            item for item in all_items
+            if any(search_lower in str(value).lower() for value in item)
+        ]
+
+    # Total items and pagination
+    total_items = len(all_items)
+    total_pages = (total_items + items_per_page - 1) // items_per_page
+
+    # Pagination logic
+    start_index = (page - 1) * items_per_page
+    end_index = start_index + items_per_page
+    current_page_items = all_items[start_index:end_index]
+
+    visible_pages = 5
+    half_visible = visible_pages // 2
+    start_page = max(1, page - half_visible)
+    end_page = min(total_pages, page + half_visible)
+    if page <= half_visible:
+        end_page = min(total_pages, visible_pages)
+    if page > total_pages - half_visible:
+        start_page = max(1, total_pages - visible_pages + 1)
+
+    # Pagination controls
+    pagination_controls = Div(
+        *(
+            [
+                A("«", href=f"/search?page={page - 1}&sort_by={sort_by}&order={order}&search={search}&date_range={date_range}&items_per_page={items_per_page}",
+                  style="margin-right: 10px;font-size: x-large;" +
+                  ("visibility: hidden;" if page == 1 else "visibility: visible;")),
+            ]
+            + [
+                A(
+                    str(i),
+                    href=f"/search?page={i}&sort_by={sort_by}&order={order}&search={search}&date_range={date_range}&items_per_page={items_per_page}",
+                    style="margin-right: 10px; text-decoration: none; font-size: x-large; " +
+                    ("font-weight: bold;" if i == page else "font-weight: normal;")
+                )
+                for i in range(start_page, end_page + 1)
+            ]
+            + [
+                A("»", href=f"/search?page={page + 1}&sort_by={sort_by}&order={order}&search={search}&date_range={date_range}&items_per_page={items_per_page}",
+                  style="margin-left: 10px;font-size: x-large;" +
+                  ("visibility: hidden;" if page == total_pages else "visibility: visible;"))
+            ]
+        ),
+        style="margin-top: 10px; text-align: center;"
+    )
+
+
+    def get_sort_icon(column):
+        if sort_by == column:
+            return "▲" if order == "asc" else "▼"
+        return "⇅"
+    
+    def create_sort_link(column):
+        new_order = "asc" if sort_by == column and order == "desc" else "desc"
+        return A(
+            get_sort_icon(column),
+            href=f"/search?page={page}&sort_by={column}&order={new_order}&search={search}&date_range={date_range}&items_per_page={items_per_page}",
+            style="text-decoration: none; font-size: small; margin-left: 5px;"
+        )
+
+    date_range_options = Form(
+        Group(
+            Input(type="hidden", name="search", value=search),
+            Input(type="radio", name="date_range", value="all", id="all", checked=(date_range == "all"),onchange="this.form.submit()"),
+            Label("All", for_="all", style="margin-right: 10px;"),
+            Input(type="radio", name="date_range", value="1month", id="1month", checked=(date_range == "1month"),onchange="this.form.submit()"),
+            Label("Last 1 Month", for_="1month", style="margin-right: 10px;"),
+            Input(type="radio", name="date_range", value="3months", id="3months", checked=(date_range == "3months"),onchange="this.form.submit()"),
+            Label("Last 3 Months", for_="3months", style="margin-right: 10px;"),
+            Input(type="radio", name="date_range", value="6months", id="6months", checked=(date_range == "6months"),onchange="this.form.submit()"),
+            Label("Last 6 Months", for_="6months"),
+            style="margin-bottom: 20px; display: flex; align-items: center;"
+        ),
+        action="/search", method="get"
+    )
+    stage_mapping = {
+        1: "Initiated",
+        2: "Processing",
+        3: "Approval Pending",
+        4: "Approved",
+        5: "Under Enquiry",
+        6: "Ordered",
+        7: "Received",
+        8: "Processed",
+        9: "Duplicate",
+        10: "Not Approved",
+        11: "Not Available"
+    }
+    table = Table(
+        Tr(
+            
+            Th("ISBN", style="font-weight: 1000; text-align: center;"),
+            Th("Modified_ISBN", style="font-weight: 1000; text-align: center;"),
+            Th("Recommender", style="font-weight: 1000; text-align: center;"),
+            Th(Div("Email", create_sort_link("email"), style="""display: inline-flex; align-items: center; font-weight: 1000; text-align: center; justify-content: center;width: 100%; height: 100%;""")),
+            Th("Title", style="font-weight: 1000; text-align: center;"),
+            Th("Current stage", style="font-weight: 1000; text-align: center;"),
+            Th(Div("Recent action Date", create_sort_link("date"), style="""display: inline-flex; align-items: center; font-weight: 1000; text-align: center; justify-content: center;width: 100%; height: 100%;""")),
+        ),
+        *[
+            Tr(
+                Td(item[0], style="font-size: smaller; padding: 4px;"),
+                Td(item[1], style="font-size: smaller; padding: 4px;"),
+                Td(item[2], style="font-size: smaller; padding: 4px;"),
+                Td(item[3], style="font-size: smaller; padding: 4px;"),
+                Td(item[4], style="font-size: smaller; padding: 4px;"),
+                Td(stage_mapping.get(item[5], "Unknown"), style="font-size: smaller; padding: 4px;"),
+                Td(item[6], style="font-size: smaller; padding: 4px; maxwidth: 500px")
+            )
+            for item in current_page_items
+        ],
+        style="border-collapse: collapse; width: 100%;",
+        **{"border": "1"}
+    )
+
+    
+
+    card = Card(
+        H3("Search"),
+        date_range_options,
+        table,  
+        pagination_controls,  # Display pagination controls
+        header=Div(
+            A("Initiated", href="/", role="button", style="margin-left: 10px; white-space: nowrap ; height:50px; font-weight: 700;"),
+            A("Processing", href="/stage2", role="button", style="margin-left: 10px; white-space: nowrap ; height:50px; font-weight: 700;"),
+            A("Approval Pending", href="/stage3", role="button", style="margin-left: 10px; white-space: nowrap ; height:50px; font-weight: 700;"),
+            A("Approved", href="/stage4", role="button", style="margin-left: 10px; white-space: nowrap ; height:50px; font-weight: 700;"),
+            A("Under enquiry", href="/stage5", role="button", style="margin-left: 10px; white-space: nowrap ; height:50px; font-weight: 700;"),
+            A("Ordered", href="/stage6", role="button", style="margin-left: 10px; white-space: nowrap ; height:50px; font-weight: 700;"),
+            A("Received", href="/stage7", role="button", style="margin-left: 10px; white-space: nowrap ; height:50px; font-weight: 700;"),
+            A("Processed", href="/stage8", role="button", style="margin-left: 10px; white-space: nowrap ; height:50px; font-weight: 700;"),
+            A("Duplicates", href="/duplicate", role="button", style="margin-left: 10px; white-space: nowrap ; height:50px; font-weight: 700;"),
+            A("Not Approved", href="/notapproved", role="button", style="margin-left: 10px; white-space: nowrap ; height:50px; font-weight: 700;"),
+            A("Not Available", href="/stage11", role="button", style="margin-left: 10px; white-space: nowrap ; height:50px; font-weight: 700;"),
+            A("Download details here", href="/downloadsearch", role="button", style="margin-left: 10px; white-space: nowrap ; height:50px; font-weight: 700;"),
+            style="display: flex; align-items: center; justify-content: flex-start; padding: 20px; height: 50px; font-weight: 700;"
+        ),
+    )
+    return Titled('Search Details', card)

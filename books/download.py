@@ -158,7 +158,7 @@ def download_stage4():
     # Connect to the SQLite database and fetch all items
     connection = sqlite3.connect('data/library.db')
     cursor = connection.cursor()
-    cursor.execute("SELECT id,modified_isbn,book_name,sub_title,authors,publisher,edition_or_year, number_of_copies, currency,recommender,purpose,cost_currency,status,approval_remarks,date_stage_update FROM items WHERE current_stage = 3  ")
+    cursor.execute("SELECT id,modified_isbn,book_name,sub_title,authors,publisher,edition_or_year, number_of_copies, currency,recommender,purpose,cost_currency,status,approval_remarks,date_stage_update FROM items WHERE current_stage = 4 ")
     items = cursor.fetchall()
 
     # Write each item to the CSV file

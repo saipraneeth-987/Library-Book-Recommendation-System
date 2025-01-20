@@ -4,7 +4,7 @@ import fetch
 import functions
 
 
-#items_per_page: int = 10
+items_per_page: int = 10
 search1:str=""
 
 def stage1(page: int = 1, sort_by: str = "date", order: str = "desc", search: str = "", date_range: str = "all", items_per_page: int = 10):

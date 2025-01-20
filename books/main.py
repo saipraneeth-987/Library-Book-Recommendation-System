@@ -808,9 +808,9 @@ def globalsearch(page: int = 1, sort_by: str = "date_stage_update", order: str =
     return view.globalsearch(page,sort_by,order,search1,date_range)
 
 
-@app.get("/downloadsearch")
-def download_csv(search1: str = view.search1, date_range: str = "all", sort_by: str = "date", order: str = "desc", items_per_page: int = 10):
-    return download.download_search_data(search1,date_range,sort_by,order,items_per_page)
+@app.get("/downloadsearch/{search}")
+def download_csv(search: str):
+    return download.download_search_data(search)
 
 # Initialize the server
 serve()

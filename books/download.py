@@ -9,6 +9,8 @@ import fetch
 import functions
 import view
 import io
+import fetch
+
 def download_whole():
     # Create an in-memory string buffer for CSV data
     csv_file = StringIO()
@@ -381,58 +383,33 @@ def download_stage8():
 
 
 
-def download_search_data(search: str = view.search1, date_range: str = "all", sort_by: str = "date", order: str = "desc", items_per_page: int = 10):
-    # Fetch and filter data as done in the globalsearch function
-    all_items = fetch.allstage()
-
-    # Filter by date range
-    all_items = functions.filter_by_date(all_items, date_range)
-
-    # If search is provided, filter by the search term
-    if search:
-        search_lower = search.lower()
-        all_items = [
-            item for item in all_items
-            if any(search_lower in str(value).lower() for value in item)
-        ]
-    
-    # Sorting based on the 'sort_by' and 'order' parameters
-    if sort_by in ["date_stage_update", "email"]:
-        reverse = order == "desc"
-        column_index = {"date_stage_update": 6, "email": 3}[sort_by]
-        all_items.sort(key=lambda x: x[column_index] if x[column_index] is not None else "", reverse=reverse)
-
-    # Prepare CSV data
-    output = StringIO()
-    writer = csv.writer(output)
-
-    # Write headers
+def download_search_data(search: str ):
+    csv_file = StringIO()
+    writer = csv.writer(csv_file)
     writer.writerow(["ISBN", "Modified_ISBN", "Recommender", "Email", "Title", "Current Stage", "Recent Action Date"])
+    print(search)
+    items = fetch.searched_items(search)
     stage_mapping = {
-        1: "Initiated",
-        2: "Processing",
-        3: "Approval Pending",
-        4: "Approved",
-        5: "Under Enquiry",
-        6: "Ordered",
-        7: "Received",
-        8: "Processed",
-        9: "Duplicate",
-        10: "Not Approved",
-        11: "Not Available"
-    }
+            1: "Initiated",
+            2: "Processing",
+            3: "Approval Pending",
+            4: "Approved",
+            5: "Under Enquiry",
+            6: "Ordered",
+            7: "Received",
+            8: "Processed",
+            9: "Duplicate",
+            10: "Not Approved",
+            11: "Not Available"
+            }
 
-    # Write rows for the filtered and sorted data
-    for item in all_items:
+    for item in items:
         writer.writerow([item[0], item[1], item[2], item[3], item[4], stage_mapping.get(item[5], "Unknown"), item[6]])
+    csv_file.seek(0)
 
-    # Get the CSV data as a string
-    output.seek(0)
-    output_str = output.getvalue()
-
-    # Return CSV file as downloadable response
-    return Response(
-        output_str,
+    # Return the CSV file as a streaming response for download
+    return StreamingResponse(
+        csv_file,
         media_type="text/csv",
-        headers={"Content-Disposition": "attachment; filename=filtered_data.csv"}
+        headers={"Content-Disposition": "attachment; filename=booksdetails_complete.csv"}
     )

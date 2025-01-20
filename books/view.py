@@ -154,7 +154,7 @@ def stage1(page: int = 1, sort_by: str = "date", order: str = "desc", search: st
 
     global_search_box = Form(
         Group(
-            Input(type="text", name="search1", value=search1, placeholder="Search...", style="margin-right: 10px; padding: 5px;"),
+            Input(type="text", name="search1", value=search1, placeholder="Search...", style="margin-right: 10px; padding: 5px;",required=True),
             Input(type="hidden", name="date_range", value=date_range), 
             Button("Search", type="submit", style="font-weight: 600;"),
             style="display: flex; align-items: center;"
@@ -268,7 +268,7 @@ def stage2(page: int = 1, sort_by: str = "date", order: str = "desc", search: st
     )
     global_search_box = Form(
         Group(
-            Input(type="text", name="search1", value=search1, placeholder="Search...", style="margin-right: 10px; padding: 5px;"),
+            Input(type="text", name="search1", value=search1, placeholder="Search...", style="margin-right: 10px; padding: 5px;",required=True),
             Input(type="hidden", name="date_range", value=date_range), 
             Button("Search", type="submit", style="font-weight: 600;"),
             style="display: flex; align-items: center;"
@@ -631,7 +631,7 @@ def stage3(page: int = 1, sort_by: str = "date_stage_update", order: str = "asc"
     )
     global_search_box = Form(
         Group(
-            Input(type="text", name="search1", value=search1, placeholder="Search...", style="margin-right: 10px; padding: 5px;"),
+            Input(type="text", name="search1", value=search1, placeholder="Search...", style="margin-right: 10px; padding: 5px;",required=True),
             Input(type="hidden", name="date_range", value=date_range), 
             Button("Search", type="submit", style="font-weight: 600;"),
             style="display: flex; align-items: center;"
@@ -883,7 +883,7 @@ def duplicate(page: int = 1, sort_by: str = "date", order: str = "desc", search:
     )
     global_search_box = Form(
         Group(
-            Input(type="text", name="search1", value=search1, placeholder="Search...", style="margin-right: 10px; padding: 5px;"),
+            Input(type="text", name="search1", value=search1, placeholder="Search...", style="margin-right: 10px; padding: 5px;",required=True),
             Input(type="hidden", name="date_range", value=date_range), 
             Button("Search", type="submit", style="font-weight: 600;"),
             style="display: flex; align-items: center;"
@@ -1067,7 +1067,7 @@ def stage4(page: int = 1, sort_by: str = "date_stage_update", order: str = "asc"
     )
     global_search_box = Form(
         Group(
-            Input(type="text", name="search1", value=search1, placeholder="Search...", style="margin-right: 10px; padding: 5px;"),
+            Input(type="text", name="search1", value=search1, placeholder="Search...", style="margin-right: 10px; padding: 5px;",required=True),
             Input(type="hidden", name="date_range", value=date_range), 
             Button("Search", type="submit", style="font-weight: 600;"),
             style="display: flex; align-items: center;"
@@ -1245,7 +1245,7 @@ def notapproved(page: int = 1, sort_by: str = "date_stage_update", order: str = 
     )
     global_search_box = Form(
         Group(
-            Input(type="text", name="search1", value=search1, placeholder="Search...", style="margin-right: 10px; padding: 5px;"),
+            Input(type="text", name="search1", value=search1, placeholder="Search...", style="margin-right: 10px; padding: 5px;",required=True),
             Input(type="hidden", name="date_range", value=date_range), 
             Button("Search", type="submit", style="font-weight: 600;"),
             style="display: flex; align-items: center;"
@@ -1422,7 +1422,7 @@ def stage5(page: int = 1, sort_by: str = "date_stage_update", order: str = "asc"
     )
     global_search_box = Form(
         Group(
-            Input(type="text", name="search1", value=search1, placeholder="Search...", style="margin-right: 10px; padding: 5px;"),
+            Input(type="text", name="search1", value=search1, placeholder="Search...", style="margin-right: 10px; padding: 5px;",required=True),
             Input(type="hidden", name="date_range", value=date_range), 
             Button("Search", type="submit", style="font-weight: 600;"),
             style="display: flex; align-items: center;"
@@ -1647,7 +1647,7 @@ def stage11(page: int = 1, sort_by: str = "date_stage_update", order: str = "asc
     )
     global_search_box = Form(
         Group(
-            Input(type="text", name="search1", value=search1, placeholder="Search...", style="margin-right: 10px; padding: 5px;"),
+            Input(type="text", name="search1", value=search1, placeholder="Search...", style="margin-right: 10px; padding: 5px;",required=True),
             Input(type="hidden", name="date_range", value=date_range), 
             Button("Search", type="submit", style="font-weight: 600;"),
             style="display: flex; align-items: center;"
@@ -1830,7 +1830,7 @@ def stage6(page: int = 1, sort_by: str = "date_stage_update", order: str = "asc"
     )
     global_search_box = Form(
         Group(
-            Input(type="text", name="search1", value=search1, placeholder="Search...", style="margin-right: 10px; padding: 5px;"),
+            Input(type="text", name="search1", value=search1, placeholder="Search...", style="margin-right: 10px; padding: 5px;",required=True),
             Input(type="hidden", name="date_range", value=date_range), 
             Button("Search", type="submit", style="font-weight: 600;"),
             style="display: flex; align-items: center;"
@@ -2145,7 +2145,7 @@ def stage7(page: int = 1, sort_by: str = "date_stage_update", order: str = "asc"
     )
     global_search_box = Form(
         Group(
-            Input(type="text", name="search1", value=search1, placeholder="Search...", style="margin-right: 10px; padding: 5px;"),
+            Input(type="text", name="search1", value=search1, placeholder="Search...", style="margin-right: 10px; padding: 5px;",required=True),
             Input(type="hidden", name="date_range", value=date_range), 
             Button("Search", type="submit", style="font-weight: 600;"),
             style="display: flex; align-items: center;"
@@ -2365,7 +2365,7 @@ def stage8(page: int = 1, sort_by: str = "date_stage_update", order: str = "asc"
     )
     global_search_box = Form(
         Group(
-            Input(type="text", name="search1", value=search1, placeholder="Search...", style="margin-right: 10px; padding: 5px;"),
+            Input(type="text", name="search1", value=search1, placeholder="Search...", style="margin-right: 10px; padding: 5px;",required=True),
             Input(type="hidden", name="date_range", value=date_range), 
             Button("Search", type="submit", style="font-weight: 600;"),
             style="display: flex; align-items: center;"
@@ -2573,8 +2573,18 @@ def clubbed(c_id):
     return (card)
 
 def globalsearch(page: int = 1, sort_by: str = "date", order: str = "desc", search: str = search1, date_range: str = "all", items_per_page: int = 10):
+    print(search)
     # Fetch items and apply filters
-    all_items = fetch.allstage()
+    all_items = fetch.searched_items(search)
+    print(all_items)
+    # Implement the search functionality
+    if search:
+        search_lower = search.lower()
+        all_items = [
+            item for item in all_items
+            if any(search_lower in str(value).lower() for value in item)
+        ]
+
     all_items = functions.filter_by_date_search(all_items, date_range)
 
     # Apply sorting only for 'date' and 'email' columns
@@ -2583,14 +2593,6 @@ def globalsearch(page: int = 1, sort_by: str = "date", order: str = "desc", sear
         column_index = {"date_stage_update": 6, "email": 3}[sort_by]
         all_items.sort(key=lambda x: x[column_index] if x[column_index] is not None else "", reverse=reverse)
 
-
-    # Implement the search functionality
-    if search:
-        search_lower = search.lower()
-        all_items = [
-            item for item in all_items
-            if any(search_lower in str(value).lower() for value in item)
-        ]
 
     # Total items and pagination
     total_items = len(all_items)
@@ -2614,21 +2616,21 @@ def globalsearch(page: int = 1, sort_by: str = "date", order: str = "desc", sear
     pagination_controls = Div(
         *(
             [
-                A("«", href=f"/search?page={page - 1}&sort_by={sort_by}&order={order}&search={search}&date_range={date_range}&items_per_page={items_per_page}",
+                A("«", href=f"/search?page={page - 1}&sort_by={sort_by}&order={order}&search={search}&search1={search}&date_range={date_range}&items_per_page={items_per_page}",
                   style="margin-right: 10px;font-size: x-large;" +
                   ("visibility: hidden;" if page == 1 else "visibility: visible;")),
             ]
             + [
                 A(
                     str(i),
-                    href=f"/search?page={i}&sort_by={sort_by}&order={order}&search={search}&date_range={date_range}&items_per_page={items_per_page}",
+                    href=f"/search?page={i}&sort_by={sort_by}&order={order}&search={search}&search1={search}&date_range={date_range}&items_per_page={items_per_page}",
                     style="margin-right: 10px; text-decoration: none; font-size: x-large; " +
                     ("font-weight: bold;" if i == page else "font-weight: normal;")
                 )
                 for i in range(start_page, end_page + 1)
             ]
             + [
-                A("»", href=f"/search?page={page + 1}&sort_by={sort_by}&order={order}&search={search}&date_range={date_range}&items_per_page={items_per_page}",
+                A("»", href=f"/search?page={page + 1}&sort_by={sort_by}&order={order}&search={search}&search1={search}&date_range={date_range}&items_per_page={items_per_page}",
                   style="margin-left: 10px;font-size: x-large;" +
                   ("visibility: hidden;" if page == total_pages else "visibility: visible;"))
             ]
@@ -2646,7 +2648,7 @@ def globalsearch(page: int = 1, sort_by: str = "date", order: str = "desc", sear
         new_order = "asc" if sort_by == column and order == "desc" else "desc"
         return A(
             get_sort_icon(column),
-            href=f"/search?page={page}&sort_by={column}&order={new_order}&search={search}&date_range={date_range}&items_per_page={items_per_page}",
+            href=f"/search?page={page}&sort_by={column}&order={new_order}&search={search}&search1={search}&date_range={date_range}&items_per_page={items_per_page}",
             style="text-decoration: none; font-size: small; margin-left: 5px;"
         )
 
@@ -2670,10 +2672,10 @@ def globalsearch(page: int = 1, sort_by: str = "date", order: str = "desc", sear
             Th("ISBN", style="font-weight: 1000; text-align: center;"),
             Th("Modified_ISBN", style="font-weight: 1000; text-align: center;"),
             Th("Recommender", style="font-weight: 1000; text-align: center;"),
-            Th(Div("Email", style="""display: inline-flex; align-items: center; font-weight: 1000; text-align: center; justify-content: center;width: 100%; height: 100%;""")),
+            Th(Div("Email",create_sort_link("email"),style="""display: inline-flex; align-items: center; font-weight: 1000; text-align: center; justify-content: center;width: 100%; height: 100%;""")),
             Th("Title", style="font-weight: 1000; text-align: center;"),
             Th("Current stage", style="font-weight: 1000; text-align: center;"),
-            Th(Div("Recent action Date",  style="""display: inline-flex; align-items: center; font-weight: 1000; text-align: center; justify-content: center;width: 100%; height: 100%;""")),
+            Th(Div("Recent action Date",create_sort_link("date_stage_update"),style="""display: inline-flex; align-items: center; font-weight: 1000; text-align: center; justify-content: center;width: 100%; height: 100%;""")),
         ),
         *[
             Tr(
@@ -2691,7 +2693,6 @@ def globalsearch(page: int = 1, sort_by: str = "date", order: str = "desc", sear
         **{"border": "1"}
     )
 
-    
 
     card = Card(
         H3("Search"),
@@ -2708,7 +2709,7 @@ def globalsearch(page: int = 1, sort_by: str = "date", order: str = "desc", sear
             A("Duplicates", href="/duplicate", role="button", style="margin-left: 10px; white-space: nowrap ; height:50px; font-weight: 700;"),
             A("Not Approved", href="/notapproved", role="button", style="margin-left: 10px; white-space: nowrap ; height:50px; font-weight: 700;"),
             A("Not Available", href="/stage11", role="button", style="margin-left: 10px; white-space: nowrap ; height:50px; font-weight: 700;"),
-            A("Download details here", href="/downloadsearch", role="button", style="margin-left: 10px; white-space: nowrap ; height:50px; font-weight: 700;"),
+            A("Download details here", href=f"/downloadsearch/{search}", role="button", style="margin-left: 10px; white-space: nowrap ; height:50px; font-weight: 700;"),
             style="display: flex; align-items: center; justify-content: flex-start; padding: 20px; height: 50px; font-weight: 700;"
         ),
     )

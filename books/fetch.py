@@ -294,6 +294,16 @@ def allstage():
     
     # Sort by date in descending order after conversion
     items.sort(key=lambda x: x[5] if x[5] is not None else "", reverse=True)
-
-
     return items
+
+def searched_items(search):
+    all_items = allstage()
+    if search:
+        search_lower = search.lower()
+        all_items = [
+            item for item in all_items
+            if any(search_lower in str(value).lower() for value in item)
+        ]
+    return all_items
+
+

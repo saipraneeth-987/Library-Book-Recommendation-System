@@ -37,9 +37,9 @@ def get_book_details(isbn):
             else:
                 return {"error": "Book not found"}
         else:
-            return {"error": "Book not found"}
+            return {f"Failed to fetch details: {response.status_code}"}
     else:
-        return {f"Failed to fetch details: {response.status_code}"}
+        return {""}
 
 
 def filter_by_date(all_items, date_range):

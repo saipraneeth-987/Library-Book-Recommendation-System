@@ -5,7 +5,6 @@ import functions
 
 
 items_per_page: int = 10
-
 search1:str=""
 all_stages = fetch.allstage()
 if search1:
@@ -14,7 +13,6 @@ if search1:
         item for item in all_stages
         if any(search_lower in str(value).lower() for value in item)
     ]
-
 def stage1(page: int = 1, sort_by: str = "date", order: str = "desc", search: str = "", date_range: str = "all", items_per_page: int = 10):
     # Fetch items and apply filters
     all_items = fetch.stage1()

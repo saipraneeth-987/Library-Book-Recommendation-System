@@ -349,7 +349,6 @@ def clubbed(c_id):
             headers={"Content-Disposition": "attachment; filename=clubbed.csv"}
         )
     
- 
 def download_stage8():
     csv_file = StringIO()
     writer = csv.writer(csv_file)

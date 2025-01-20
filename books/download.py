@@ -5,7 +5,10 @@ import sqlite3
 import os
 from fastapi.responses import StreamingResponse, RedirectResponse
 import re
-
+import fetch
+import functions
+import view
+import io
 def download_whole():
     # Create an in-memory string buffer for CSV data
     csv_file = StringIO()
@@ -326,6 +329,7 @@ def download_stage7():
     )
 
 def clubbed(c_id):
+
     print(c_id)
     csv_file = StringIO()
     writer = csv.writer(csv_file)
@@ -346,3 +350,90 @@ def clubbed(c_id):
         )
     
  
+def download_stage8():
+    csv_file = StringIO()
+    writer = csv.writer(csv_file)
+
+    # Write the header row for the CSV file
+    writer.writerow(["ID","ISBN", "Title", "Sub Title", "Author","Publisher","Edition/year","Number of copies","Currency", "Recommender","Purpose of recommendation","Cost in Currency","Status","Approval Remarks","Book Availability","supplier Information","Remarks while Enquiry","Remarks while Ordering","Remarks After Received","Remarks After Processed", "Recent Action Date"])
+
+    # Connect to the SQLite database and fetch all items
+    connection = sqlite3.connect('data/library.db')
+    cursor = connection.cursor()
+    cursor.execute("SELECT id,modified_isbn,book_name,sub_title,authors,publisher,edition_or_year, number_of_copies, currency,recommender,purpose,cost_currency,status,approval_remarks,availability_stage5,supplier_info,remarks_stage5,remarks_stage6,remarks_stage7,remarks_stage8,date_stage_update FROM items WHERE current_stage = 8 ")
+    items = cursor.fetchall()
+
+    # Write each item to the CSV file
+    for item in items:
+        writer.writerow(item)
+
+    # Close the database connection
+    connection.close()
+
+    # Reset the cursor to the beginning of the buffer
+    csv_file.seek(0)
+
+    # Return the CSV file as a streaming response for download
+    return StreamingResponse(
+        csv_file,
+        media_type="text/csv",
+        headers={"Content-Disposition": "attachment; filename=books_Processed.csv"}
+    )
+
+
+
+def download_search_data(search: str = view.search1, date_range: str = "all", sort_by: str = "date", order: str = "desc", items_per_page: int = 10):
+    # Fetch and filter data as done in the globalsearch function
+    all_items = fetch.allstage()
+
+    # Filter by date range
+    all_items = functions.filter_by_date(all_items, date_range)
+
+    # If search is provided, filter by the search term
+    if search:
+        search_lower = search.lower()
+        all_items = [
+            item for item in all_items
+            if any(search_lower in str(value).lower() for value in item)
+        ]
+    
+    # Sorting based on the 'sort_by' and 'order' parameters
+    if sort_by in ["date_stage_update", "email"]:
+        reverse = order == "desc"
+        column_index = {"date_stage_update": 6, "email": 3}[sort_by]
+        all_items.sort(key=lambda x: x[column_index] if x[column_index] is not None else "", reverse=reverse)
+
+    # Prepare CSV data
+    output = StringIO()
+    writer = csv.writer(output)
+
+    # Write headers
+    writer.writerow(["ISBN", "Modified_ISBN", "Recommender", "Email", "Title", "Current Stage", "Recent Action Date"])
+    stage_mapping = {
+        1: "Initiated",
+        2: "Processing",
+        3: "Approval Pending",
+        4: "Approved",
+        5: "Under Enquiry",
+        6: "Ordered",
+        7: "Received",
+        8: "Processed",
+        9: "Duplicate",
+        10: "Not Approved",
+        11: "Not Available"
+    }
+
+    # Write rows for the filtered and sorted data
+    for item in all_items:
+        writer.writerow([item[0], item[1], item[2], item[3], item[4], stage_mapping.get(item[5], "Unknown"), item[6]])
+
+    # Get the CSV data as a string
+    output.seek(0)
+    output_str = output.getvalue()
+
+    # Return CSV file as downloadable response
+    return Response(
+        output_str,
+        media_type="text/csv",
+        headers={"Content-Disposition": "attachment; filename=filtered_data.csv"}
+    )

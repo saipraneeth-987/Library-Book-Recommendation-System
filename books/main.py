@@ -10,9 +10,12 @@ import requests
 import functions 
 import download
 import view
+import fetch
 from flask import  request
 from pydantic import BaseModel
 from fastapi.middleware.cors import CORSMiddleware
+from flask import Flask, Response
+
 
 
 # Initialize the FastAPI application
@@ -787,5 +790,15 @@ def remove_clubbed(id: int):
     book.c_id = None
     items.update(book)
     return RedirectResponse("/stage3", status_code=302)
+
+@app.get("/search")
+def globalsearch(page: int = 1, sort_by: str = "date_stage_update", order: str = "desc", search1: str= "", date_range: str = "all"):
+    return view.globalsearch(page,sort_by,order,search1,date_range)
+
+
+@app.get("/downloadsearch")
+def download_csv(search1: str = view.search1, date_range: str = "all", sort_by: str = "date", order: str = "desc", items_per_page: int = 10):
+    return download.download_search_data(search1,date_range,sort_by,order,items_per_page)
+
 # Initialize the server
 serve()

@@ -786,10 +786,21 @@ def edit_clubbed(c_id: int):
 def remove_clubbed(id: int):
     print(id)
     book = items(where=f"id ={id}")[0]
-    print(book)
+    c_id = book.c_id
+    same_cid_items = items(where=f"c_id ={c_id} and current_stage = 3")
+    #print(same_cid_items)
+    if (len(same_cid_items) == 2):
+        other_book = items(where=f"c_id ={c_id} and current_stage = 3 and id != {id}")[0]
+        #print(other_book)
+        other_book.clubbed = False
+        other_book.c_id = None
+        items.update(other_book)
+
+    #print(book)
     book.clubbed = False
     book.c_id = None
     items.update(book)
+
     return RedirectResponse("/stage3", status_code=302)
 
 @app.get("/search")

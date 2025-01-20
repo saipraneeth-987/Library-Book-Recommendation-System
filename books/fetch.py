@@ -262,3 +262,19 @@ def stage8():
 
 
     return items
+
+def clubbed(c_id: int):
+    connection = sqlite3.connect('data/library.db')
+    cursor = connection.cursor()
+    print(c_id)
+    cursor.execute("""
+        SELECT id, modified_isbn, book_name, sub_title, authors, publisher, edition_or_year,
+               number_of_copies, currency, recommender, purpose, cost_currency, status,
+               approval_remarks, date_stage_update, clubbed, c_id
+        FROM items
+        WHERE current_stage = 3 AND clubbed = 1 AND c_id = ?
+        ORDER BY date_stage_update DESC
+    """, (c_id,))
+    items = cursor.fetchall()
+    connection.close()
+    return items

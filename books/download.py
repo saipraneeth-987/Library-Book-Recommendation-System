@@ -411,5 +411,5 @@ def download_search_data(search: str ):
     return StreamingResponse(
         csv_file,
         media_type="text/csv",
-        headers={"Content-Disposition": "attachment; filename=booksdetails_complete.csv"}
+        headers={"Content-Disposition": "attachment; filename=Searched_books.csv"}
     )

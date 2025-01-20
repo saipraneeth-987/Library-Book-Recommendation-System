@@ -653,6 +653,8 @@ def stage3(page: int = 1, sort_by: str = "date_stage_update", order: str = "asc"
         ),
         *[
             Tr(
+                #id=f"row-{item[0]}",
+                #content = [
                 Td(
                 Input(type="checkbox", name="row_checkbox", value=item[0], style="margin: auto;"),  # Checkbox in each row
                 style="text-align: center; padding: 4px;"
@@ -677,9 +679,10 @@ def stage3(page: int = 1, sort_by: str = "date_stage_update", order: str = "asc"
                     A("Move to Next Stage ", href=f"/move_to_stage4_from_stage3/{item[1]}", style="display:block;font-size: smaller;margin-bottom:3px"),
                     A("Move to Previous Stage ", href=f"/move_to_stage2_from_stage3/{item[1]}", style="display:block;font-size: smaller;")) if item[15]==0 else (
                     A("Download", href=f"/download_clubbed/{item[16]}", style="display:block;font-size: smaller;margin-bottom:3px"),
-                    A("Edit", href=f"/edit_clubbed/{item[0]}", style="display:block;font-size: smaller;margin-bottom:3px"))
-            )
-            )
+                    A("Edit", href=f"/edit_clubbed/{item[16]}",style="display:block;font-size: smaller;margin-bottom:3px")
+                    )
+                   )
+                )
             for item in current_page_items
         ],
         id = "book-table",
@@ -2374,3 +2377,69 @@ async def edit_in_stage8(id: int):
 
     )
     return res
+
+def clubbed(c_id):
+    items = fetch.clubbed(c_id)
+    table = Table(
+        Tr(
+            Th("Select", style="font-weight: 1000; text-align: center;"),
+            Th("ID", style="font-weight: 1000; text-align: center;"),
+            Th("ISBN", style=" align-items: center; font-weight: 1000;"),
+            Th("Title", style="font-weight: 1000; text-align: center;"),
+            Th("Sub Title", style="font-weight: 1000; text-align: center;"),
+            Th("Author", style="font-weight: 1000; text-align: center;"),
+            Th("Publisher", style="font-weight: 1000; text-align: center;"),
+            Th("Edition/Year", style="font-weight: 1000; text-align: center;"),
+            Th("Number of Copies", style="font-weight: 1000; text-align: center;"),
+            Th("Currency", style="font-weight: 1000; text-align: center;"),
+            Th("Recommender", style="font-weight: 1000; text-align: center;"),
+            Th("Purpose of recommendation", style="font-weight: 1000; text-align: center;"),
+            Th("Cost in Currency", style="font-weight: 1000; text-align: center;"),
+            Th("Approval Status", style="font-weight: 1000; text-align: center;"),
+            Th("Approval Remarks", style="font-weight: 1000; text-align: center;"),
+            Th("Date_Stage_update",style="display: inline-flex; align-items: center; font-weight: 1000;"),
+            Th("Action", style="font-weight: 1000; text-align: center;"),
+        ),
+        *[
+            Tr(
+                Td(
+                Input(type="checkbox", name="row_checkbox", value=item[0], style="margin: auto;"),  # Checkbox in each row
+                style="text-align: center; padding: 4px;"
+            ),
+                Td(item[0], style="font-size: smaller; padding: 4px;"),
+                Td(item[1], style="font-size: smaller; padding: 4px;"),
+                Td(item[2], style="font-size: smaller; padding: 4px;"),
+                Td(item[3], style="font-size: smaller; padding: 4px;"),
+                Td(item[4], style="font-size: smaller; padding: 4px;"),
+                Td(item[5], style="font-size: smaller; padding: 4px;"),
+                Td(item[6], style="font-size: smaller; padding: 4px;"),
+                Td(item[7], style="font-size: smaller; padding: 4px;"),
+                Td(item[8], style="font-size: smaller; padding: 4px;"),
+                Td(item[9], style="font-size: smaller; padding: 4px;"),
+                Td(item[10], style="font-size: smaller; padding: 4px;"),
+                Td(item[11], style="font-size: smaller; padding: 4px;"),
+                Td(item[12], style="font-size: smaller; padding: 4px;"),
+                Td(item[13], style="font-size: smaller; padding: 4px;"),
+                Td(item[14], style="font-size: smaller; padding: 4px;maxwidth: 500px"),
+                Td(
+                    A("Edit", href=f"/edit-book_stage3/{item[0]}", style="display:block;font-size: smaller;margin-bottom:3px; width:130px"),
+                    A("Move to Next Stage ", href=f"/move_to_stage4_from_stage3/{item[1]}", style="display:block;font-size: smaller;margin-bottom:3px"),
+                    A("Move to Previous Stage ", href=f"/move_to_stage2_from_stage3/{item[1]}", style="display:block;font-size: smaller;"),
+                    A("Remove from club", href=f"/remove-club/{item[0]}", style="display:block;font-size: smaller;margin-bottom:3px")
+            )
+        )
+            for item in items
+        ],
+        id = "book-table",
+        style="border-collapse: collapse; width: 100%;",
+        **{"border": "1"}
+    )
+    card = Card(
+            H3("Clubbed Books"),
+            table
+            )
+
+    return (card)
+
+
+

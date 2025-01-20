@@ -36,10 +36,11 @@ def get_book_details(isbn):
                 return {"title": title, "subtitle":subtitle,"authors": authors, "publisher":publishers}
             else:
                 return {"error": "Book not found"}
+        
         else:
             return {f"Failed to fetch details: {response.status_code}"}
     else:
-        return{""}
+        return {""}
 
 
 def filter_by_date(all_items, date_range):

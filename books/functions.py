@@ -20,27 +20,66 @@ def update_stage(isbn: int, current_stage: int,new_stage: int):
         connection.commit()
 
 def get_book_details(isbn):
-    if(isbn):
+    if (isbn):
         api_key = "AIzaSyBVqOwuDKlY35_CSFSuhWzcAP4MIGnqLLU"
-        url = f"https://www.googleapis.com/books/v1/volumes?q=isbn:{isbn}&key={api_key}"
+        url = f"https://www.googleapis.com/books/v1/volumes?q=isbn:{
+            isbn}&key={api_key}"
         response = requests.get(url)
+        url_openlib = f"https://openlibrary.org/api/books?bibkeys=ISBN:{
+            isbn}&format=json&jscmd=data"
+        response_openlib = requests.get(url_openlib)
+        if response_openlib.status_code == 200:
+            openlib_data = response_openlib.json()
+            key = f"ISBN:{isbn}"
+            if key in openlib_data:
+                openlib_book = openlib_data[key]
+                openlib_title = openlib_book.get("title", "Unknown Title")
+                openlib_subtitle = openlib_book.get("subtitle", "")
+                openlib_authors = ", ".join(
+                    [author["name"] for author in
+                     openlib_book.get("authors", [])])
+                openlib_publishers = ",".join(
+                    [publisher["name"] for publisher in
+                     openlib_book.get("publishers", [])])
+            else:
+                openlib_data = None
+        else:
+            openlib_data = None
         if response.status_code == 200:
             data = response.json()
             print(data)
             if "items" in data:
                 book = data["items"][0]["volumeInfo"]
-                title = book.get("title", "Unknown Title") 
+                book = openlib_book if (
+                    book == "" and openlib_data != None) else book
+                title = book.get("title", "Unknown Title")
+                title = openlib_title if (
+                    title == "" and openlib_data != None) else title
                 subtitle = book.get("subtitle", "")
+                subtitle = openlib_subtitle if (
+                    subtitle == "" and openlib_data != None) else subtitle
                 authors = ", ".join(book.get("authors", ["Unknown Author"]))
+                authors = openlib_authors if (
+                    authors == "" and openlib_data != None) else authors
                 publishers = book.get("publisher", ["Unknown Publisher"])
-                return {"title": title, "subtitle":subtitle,"authors": authors, "publisher":publishers}
+                publishers = openlib_publishers if (
+                    publishers == "" and openlib_data != None) else publishers
+                print("---------",title,subtitle,authors,publishers)
+                return {"title": title,
+                        "subtitle": subtitle,
+                        "authors": authors,
+                        "publishers": publishers}
+            elif openlib_data is not None:
+                return {"title": openlib_title,
+                        "subtitle": openlib_subtitle,
+                        "authors": openlib_authors,
+                        "publishers": openlib_publishers}
             else:
                 return {"error": "Book not found"}
         else:
             return {f"Failed to fetch details: {response.status_code}"}
     else:
         return {""}
-
 
 def filter_by_date(all_items, date_range):
     today = datetime.today()

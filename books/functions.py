@@ -31,6 +31,7 @@ def get_book_details(isbn):
         if response_openlib.status_code == 200:
             openlib_data = response_openlib.json()
             key = f"ISBN:{isbn}"
+            print(openlib_data)
             if key in openlib_data:
                 openlib_book = openlib_data[key]
                 openlib_title = openlib_book.get("title", "Unknown Title")
@@ -228,7 +229,8 @@ async def load(backup_file: UploadFile):
         try:
             # Extract necessary fields
             isbn = row[3]  # Assuming ISBN is at the correct column index
-            
+            if "-" in isbn:
+                isbn = isbn.replace("-","")
             recommender = row[18]  # Assuming recommender is at the correct column index
             email = row[1]  # Assuming email is at the correct column index
             number_of_copies = int(row[5])  # Assuming number of copies is at the correct column index
@@ -248,6 +250,29 @@ async def load(backup_file: UploadFile):
         except Exception as e:
             print(f"Error processing row {row}: {e}")
             continue
-
     connection.commit()
+
+    cursor.execute("""select id,isbn,number_of_copies from items where 
+        isbn in (select isbn from items 
+        group by isbn 
+        having  count(isbn)>1
+        order by count(isbn) desc) and current_stage = 1;""")
+    duplicates_present = cursor.fetchall()
+    max_copy_per_isbn = {}
+    if duplicates_present:
+        print(duplicates_present)
+        for row in duplicates_present:
+            print(row)
+            id_,isbn,number_of_copies = row
+            if isbn not in max_copy_per_isbn or number_of_copies > max_copy_per_isbn[isbn][2]:
+                max_copy_per_isbn[isbn] = row
+        max_tuples = list(max_copy_per_isbn.values())
+        print(max_tuples)
+        for row in duplicates_present:
+            if row not in max_tuples:
+                print(row)
+                id_ = row[0]
+                cursor.execute("""update items set current_stage = 12 where id = ?""",(id_,))
+                connection.commit()
+            connection.commit()
     connection.close()

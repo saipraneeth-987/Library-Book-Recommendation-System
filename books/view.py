@@ -783,7 +783,7 @@ def stage3(page: int = 1, sort_by: str = "date_stage_update", order: str = "asc"
         H6("This displays the details for Stage 3, including editable fields like cost, currency, and remarks."),
         search_box,
         date_range_options,
-        Button("Club Rows", id="club-rows-button", style="margin-top: 10px; ",action ="/club-rows",method = "post"),
+        Button("Club Rows", id="club-rows-button", style="margin-top: 10px; margin-bottom: 10px;",action ="/club-rows",method = "post"),
         table,
         pagination_controls,
         header=Div(
@@ -2562,9 +2562,31 @@ async def edit_in_stage8(id: int):
     return res
 
 def clubbed(c_id):
+    header = (
+        A('Back', href='/stage3', role="button", style=" margin-bottom: 10px;"),
+        Button("Approved",id="approvedButton", style="margin-bottom: 10px; display: none; margin-left: 10px;",action="/approve_selected",method="post"),
+        Button("Move to next stage",id="moveToNextStageButton", style="margin-bottom: 10px; display: none; margin-left: 10px;",action="/move_selected",method="post"),
+
+    )
     items = fetch.clubbed(c_id)
     table = Table(
         Tr(
+            Th(
+            Input(
+                type="checkbox", 
+                name="select_all", 
+                style="margin: auto;", 
+                onclick="""
+                 const checkboxes = document.querySelectorAll('input[name="row_checkbox"]');
+                console.log('Found checkboxes:', checkboxes);
+                checkboxes.forEach(checkbox => checkbox.checked = this.checked);
+                updateSelectAllBoxandButtons();
+                """,
+            ),
+            "Select All",
+            style="font-weight: 1000;font-size: 13px; text-align: center;"
+            ),
+           # Th("Select", style="font-weight: 1000; text-align: center;"),
             Th("ID", style="font-weight: 1000; text-align: center;"),
             Th("ISBN", style=" align-items: center; font-weight: 1000;"),
             Th("Title", style="font-weight: 1000; text-align: center;"),
@@ -2584,6 +2606,11 @@ def clubbed(c_id):
         ),
         *[
             Tr(
+                Td(
+                    Input(type="checkbox", name="row_checkbox",
+                          value=item[0], style="margin: auto;", onchange="updateSelectAllBoxandButtons()"),
+                style="text-align: center; padding: 4px;"
+            ),
                 Td(item[0], style="font-size: smaller; padding: 4px;"),
                 Td(item[1], style="font-size: smaller; padding: 4px;"),
                 Td(item[2], style="font-size: smaller; padding: 4px;"),
@@ -2608,16 +2635,92 @@ def clubbed(c_id):
         )
             for item in items
         ],
-        id = "book-table",
+        id = "club-book-table",
         style="border-collapse: collapse; width: 100%;",
         **{"border": "1"}
     )
+    js = """
+        function updateSelectAllBoxandButtons() {
+                const checkboxes = document.querySelectorAll('input[name="row_checkbox"]');
+                console.log('Found checkboxes:', checkboxes);
+                const selectAllCheckbox = document.querySelector('input[name="select_all"]');
+                const allChecked = Array.from(checkboxes).every(checkbox => checkbox.checked);
+                console.log('All checked:', allChecked);
+                selectAllCheckbox.checked = allChecked;
+
+                const anySelected = Array.from(checkboxes).some(checkbox => checkbox.checked);
+                const approvedButton = document.getElementById('approvedButton');
+                approvedButton.style.display = anySelected ? 'inline-block' : 'none';
+                moveToNextStageButton.style.display = anySelected ? 'inline-block' : 'none';
+        }
+
+        document.getElementById('approvedButton').onclick = function () {
+        const selectedRows = Array.from(document.querySelectorAll('input[name="row_checkbox"]:checked')).map(cb => cb.value);
+        if (selectedRows.length > 0) {
+            fetch('http://localhost:5001/approve_selected', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ mixedRow: selectedRows })
+            })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    document.querySelectorAll('input[name="row_checkbox"]:checked').forEach(cb => cb.checked = false);
+                    const selectAllCheckbox = document.querySelector('input[name="select_all"]');
+                    if(selectAllCheckbox.checked){
+                        selectAllCheckbox.checked = false;
+                    }
+                    setTimeout(() => location.reload(), 100);
+                })
+                .catch(error => {
+                    alert( error.message);
+                });
+        } else {
+            alert('Select atleast one row to approve.');
+        }};
+
+    document.getElementById('moveToNextStageButton').onclick = function () {
+    const selectedRows = Array.from(document.querySelectorAll('input[name="row_checkbox"]:checked')).map(cb => cb.value);
+    if (selectedRows.length > 0) {
+        fetch('http://localhost:5001/move_selected', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ mixedRow: selectedRows })
+            })
+        .then(response => {
+            if (!response.ok) {
+                return response.json().then(errorData => {
+                    throw new Error(errorData.message || "Unknown error occurred");
+                    });
+                }
+            return response.json();
+            })
+        .then(data => {
+            document.querySelectorAll('input[name="row_checkbox"]:checked').forEach(cb => cb.checked = false);
+            const selectAllCheckbox = document.querySelector('input[name="select_all"]');
+            if(selectAllCheckbox.checked){
+                selectAllCheckbox.checked = false;
+                }
+            setTimeout(() => location.reload(), 100);
+            })
+        .catch(error => {
+            alert(error.message);
+            });
+        } else {
+            alert('Select atleast one row to move.');
+        }};
+"""
     card = Card(
             H3("Clubbed Books"),
+            header,
             table
             )
 
-    return (card)
+    return (card,Script(src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.1/fabric.min.js"),Script(js))
 
 def globalsearch(page: int = 1, sort_by: str = "date", order: str = "desc", search: str = search1, date_range: str = "all", items_per_page: int = 10):
     print(search)

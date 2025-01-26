@@ -763,25 +763,19 @@ async def club_rows(data: RowData):
                 c_id = cursor.fetchone()[0]
                 if c_id == 'None' or c_id == None:
                     c_id = 0
-                print(c_id)
                 c_id = int(c_id)
             for row in mixed_row:
-                print(row)
                 if "|" in row:
                     indices = row.split("|")
-                    print(indices)
                     for index in indices:
                         id = int(index.strip())
                         book = items(where=f"id ={id}")[0]
-                        print(book)
                         book.clubbed = True
                         book.c_id = c_id+1
                         items.update(book)
                 else:
                     id = int(row.strip())
-                    print(id)
                     book = items(where=f"id ={id}")[0]
-                    print(book)
                     book.clubbed = True
                     new_c_id = c_id+1
                     book.c_id = new_c_id
@@ -807,15 +801,12 @@ def remove_clubbed(id: int):
     book = items(where=f"id ={id}")[0]
     c_id = book.c_id
     same_cid_items = items(where=f"c_id ={c_id} and current_stage = 3")
-    #print(same_cid_items)
     if (len(same_cid_items) == 2):
         other_book = items(where=f"c_id ={c_id} and current_stage = 3 and id != {id}")[0]
-        #print(other_book)
         other_book.clubbed = False
         other_book.c_id = None
         items.update(other_book)
 
-    #print(book)
     book.clubbed = False
     book.c_id = None
     items.update(book)

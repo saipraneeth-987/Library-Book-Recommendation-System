@@ -852,5 +852,9 @@ def move_selected(data: RowData):
     except Exception as e:
         return JSONResponse(content={"message": f"Error moving rows: {str(e)}"}, status_code=500)
 
+@app.get("/duplicateRecommendation")
+def initial_duplicates(page: int = 1, sort_by: str = "date", order: str = "desc", search: str= "", date_range: str = "all"):
+    return view.duplicateRecommendation(page,sort_by,order,search,date_range)
+
 # Initialize the server
 serve()

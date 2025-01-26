@@ -172,6 +172,7 @@ def stage1(page: int = 1, sort_by: str = "date", order: str = "desc", search: st
     )
 
     card = Card(
+            A("Duplicate Recommendations", href="/duplicateRecommendation", role="button", style="margin-left: 10px; white-space: nowrap ; height:50px; font-weight: 700;"),
         H3("Stage 1 - Initiated phase"),
         H6("This displays the details collected from googleform responses. It displays the order such that the latest book request on the top."),
         H6("Each book request is currently restored from Google Sheets CSV file. Initially, upload the CSV Google Sheet file and restore the details."),
@@ -2811,3 +2812,150 @@ def globalsearch(page: int = 1, sort_by: str = "date", order: str = "desc", sear
         ),
     )
     return Titled('Search Details', card)
+
+
+def duplicateRecommendation(page: int = 1, sort_by: str = "date", order: str = "desc", search: str= "", date_range: str = "all"):
+    all_items = fetch.duplicateRecommendation()
+    all_items = functions.filter_by_date(all_items, date_range)
+    if sort_by in ["date", "email"]:
+        reverse = order == "desc"
+        column_index = {"date": 6, "email": 2}[sort_by]
+        all_items.sort(key=lambda x: x[column_index], reverse=reverse)
+    # Implement the search functionality
+    if search:
+        search_lower = search.lower()
+        all_items = [
+            item for item in all_items
+            if any(search_lower in str(value).lower() for value in item)
+        ]
+    # Total items and pagination
+    total_items = len(all_items)
+    total_pages = (total_items + items_per_page - 1) // items_per_page
+
+    # Pagination logic
+    start_index = (page - 1) * items_per_page
+    end_index = start_index + items_per_page
+    current_page_items = all_items[start_index:end_index]
+
+    visible_pages = 5
+    half_visible = visible_pages // 2
+    start_page = max(1, page - half_visible)
+    end_page = min(total_pages, page + half_visible)
+    if page <= half_visible:
+        end_page = min(total_pages, visible_pages)
+    if page > total_pages - half_visible:
+        start_page = max(1, total_pages - visible_pages + 1)
+
+    # Pagination controls
+    pagination_controls = Div(
+        *(
+            [
+                A("«", href=f"/duplicateRecommendation?page={page - 1}&sort_by={sort_by}&order={order}&search={search}&date_range={date_range}&items_per_page={items_per_page}",
+                  style="margin-right: 10px;font-size: x-large;" +
+                  ("visibility: hidden;" if page == 1 else "visibility: visible;")),
+            ]
+            + [
+                A(
+                    str(i),
+                    href=f"/duplicateRecommendation?page={i}&sort_by={sort_by}&order={order}&search={search}&date_range={date_range}&items_per_page={items_per_page}",
+                    style="margin-right: 10px; text-decoration: none; font-size: x-large; " +
+                    ("font-weight: bold;" if i == page else "font-weight: normal;")
+                )
+                for i in range(start_page, end_page + 1)
+            ]
+            + [
+                A("»", href=f"/duplicateRecommendation?page={page + 1}&sort_by={sort_by}&order={order}&search={search}&date_range={date_range}&items_per_page={items_per_page}",
+                  style="margin-left: 10px;font-size: x-large;" +
+                  ("visibility: hidden;" if page == total_pages else "visibility: visible;"))
+            ]
+        ),
+        style="margin-top: 10px; text-align: center;"
+    )
+    search_box = Form(
+        Group(
+            Input(type="text", name="search", value=search, placeholder="Search...", style="margin-right: 10px; padding: 5px;"),
+            Input(type="hidden", name="date_range", value=date_range),
+            Button("Search", type="submit", style="font-weight: 600;"),
+            style="display: flex; align-items: center;"
+        ),
+        action="/duplicateRecommendation", method="get"
+    )
+
+    def get_sort_icon(column):
+        if sort_by == column:
+            return "▲" if order == "asc" else "▼"
+        return "⇅"
+    def create_sort_link(column):
+        new_order = "asc" if sort_by == column and order == "desc" else "desc"
+        return A(
+            get_sort_icon(column),
+            href=f"/duplicateRecommendation?page={page}&sort_by={column}&order={new_order}&search={search}&date_range={date_range}&items_per_page={items_per_page}",
+            style="text-decoration: none; font-size: small; margin-left: 5px;"
+        )
+
+    date_range_options = Form(
+        Group(
+            Input(type="hidden", name="search", value=search),
+            Input(type="radio", name="date_range", value="all", id="all", checked=(date_range == "all"),onchange="this.form.submit()"),
+            Label("All", for_="all", style="margin-right: 10px;"),
+            Input(type="radio", name="date_range", value="1month", id="1month", checked=(date_range == "1month"),onchange="this.form.submit()"),
+            Label("Last 1 Month", for_="1month", style="margin-right: 10px;"),
+            Input(type="radio", name="date_range", value="3months", id="3months", checked=(date_range == "3months"),onchange="this.form.submit()"),
+            Label("Last 3 Months", for_="3months", style="margin-right: 10px;"),
+            Input(type="radio", name="date_range", value="6months", id="6months", checked=(date_range == "6months"),onchange="this.form.submit()"),
+            Label("Last 6 Months", for_="6months"),
+            style="margin-bottom: 20px; display: flex; align-items: center;"
+        ),
+        action="/duplicateRecommendation", method="get"
+    )
+
+    table = Table(
+        Tr(
+            Th(Div("Date", create_sort_link("date"), style="""display: inline-flex; align-items: center; font-weight: 1000; text-align: center; justify-content: center;width: 100%; height: 100%;""")),
+            Th("ISBN", style="font-weight: 1000; text-align: center;"),
+            Th("Recommender", style="font-weight: 1000; text-align: center;"),
+            Th(Div("Email", create_sort_link("email"), style="""display: inline-flex; align-items: center; font-weight: 1000; text-align: center; justify-content: center;width: 100%; height: 100%;""")),
+            Th("Number of Copies", style="font-weight: 1000; text-align: center;"),
+            Th("Purpose", style="font-weight: 1000; text-align: center;"),
+            Th("Remarks", style="font-weight: 1000; text-align: center;"),
+        ),
+        *[
+            Tr(
+                Td(item[6], style="font-size: smaller; padding: 4px;"),
+                Td(item[0], style="font-size: smaller; padding: 4px;"),
+                Td(item[1], style="font-size: smaller; padding: 4px;"),
+                Td(item[2], style="font-size: smaller; padding: 4px;"),
+                Td(item[3], style="font-size: smaller; padding: 4px;"),
+                Td(item[4], style="font-size: smaller; padding: 4px;"),
+                Td(item[5], style="font-size: smaller; padding: 4px; maxwidth: 500px"),
+            )
+            for item in current_page_items
+        ],
+        style="border-collapse: collapse; width: 100%;",
+        **{"border": "1"}
+    )
+
+    card = Card(
+        search_box,
+        date_range_options,
+        table,
+        pagination_controls,  # Display pagination controls
+        header=Div(
+            #A("Globalsearch", href="/search", role="button", style="margin-left: 10px; white-space: nowrap ; height:50px; font-weight: 700;"),
+            A("Initiated", href="/", role="button", style="margin-left: 10px; white-space: nowrap ; height:50px; font-weight: 700;"),
+            A("Processing", href="/stage2", role="button", style="margin-left: 10px; white-space: nowrap ; height:50px; font-weight: 700;"),
+            A("Approval Pending", href="/stage3", role="button", style="margin-left: 10px; white-space: nowrap ; height:50px; font-weight: 700;"),
+            A("Approved", href="/stage4", role="button", style="margin-left: 10px; white-space: nowrap ; height:50px; font-weight: 700;"),
+            A("Under enquiry", href="/stage5", role="button", style="margin-left: 10px; white-space: nowrap ; height:50px; font-weight: 700;"),
+            A("Ordered", href="/stage6", role="button", style="margin-left: 10px; white-space: nowrap ; height:50px; font-weight: 700;"),
+            A("Received", href="/stage7", role="button", style="margin-left: 10px; white-space: nowrap ; height:50px; font-weight: 700;"),
+            A("Processed", href="/stage8", role="button", style="margin-left: 10px; white-space: nowrap ; height:50px; font-weight: 700;"),
+            A("Duplicates", href="/duplicate", role="button", style="margin-left: 10px; white-space: nowrap ; height:50px; font-weight: 700;"),
+            A("Not Approved", href="/notapproved", role="button", style="margin-left: 10px; white-space: nowrap ; height:50px; font-weight: 700;"),
+            A("Not Available", href="/stage11", role="button", style="margin-left: 10px; white-space: nowrap ; height:50px; font-weight: 700;"),
+            A("Download All", href="/downloadentire", role="button", style="margin-left: 10px; white-space: nowrap ; height:50px; font-weight: 700;"),
+            A("Download Initiated books", href="/downloadstage1", role="button", style="margin-left: 10px; white-space: nowrap ; height:50px; font-weight: 700;"),
+            style="display: flex; align-items: center; justify-content: flex-start; padding: 20px; height: 50px; font-weight: 700;"
+        ),
+    )
+    return Titled('Duplicate Book Recommendations', card)

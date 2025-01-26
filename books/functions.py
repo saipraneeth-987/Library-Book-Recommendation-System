@@ -272,7 +272,7 @@ async def load(backup_file: UploadFile):
             if row not in max_tuples:
                 print(row)
                 id_ = row[0]
-                cursor.execute("""update items set current_stage = 12 where id = ?""",(id_,))
+                cursor.execute("""update items set current_stage = 13 where id = ?""",(id_,))
                 connection.commit()
             connection.commit()
     connection.close()

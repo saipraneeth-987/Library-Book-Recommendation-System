@@ -116,6 +116,7 @@ def stage1(page: int = 1, sort_by: str = "date", order: str = "desc", search: st
 
     table = Table(
         Tr(
+            Th("ID", style="font-weight: 1000; text-align: center;"),
             Th(Div("Date", create_sort_link("date"), style="""display: inline-flex; align-items: center; font-weight: 1000; text-align: center; justify-content: center;width: 100%; height: 100%;""")),
             Th("ISBN", style="font-weight: 1000; text-align: center;"),
             Th("Recommender", style="font-weight: 1000; text-align: center;"),
@@ -127,6 +128,7 @@ def stage1(page: int = 1, sort_by: str = "date", order: str = "desc", search: st
         ),
         *[
             Tr(
+                Td(item[7], style="font-size: smaller; padding: 4px;"),
                 Td(item[6], style="font-size: smaller; padding: 4px;"),
                 Td(item[0], style="font-size: smaller; padding: 4px;"),
                 Td(item[1], style="font-size: smaller; padding: 4px;"),
@@ -134,7 +136,7 @@ def stage1(page: int = 1, sort_by: str = "date", order: str = "desc", search: st
                 Td(item[3], style="font-size: smaller; padding: 4px;"),
                 Td(item[4], style="font-size: smaller; padding: 4px;"),
                 Td(item[5], style="font-size: smaller; padding: 4px; maxwidth: 500px"),
-                Td(A("Move to next Stage ", href=f"/move_to_stage2_from_stage1/{item[0]}", style="display:block;font-size: smaller; padding: 4px; width: 110px"))
+                Td(A("Move to next Stage ", href=f"/move_to_stage2_from_stage1/{item[7]}", style="display:block;font-size: smaller; padding: 4px; width: 110px"))
             )
             for item in current_page_items
         ],
@@ -347,8 +349,8 @@ def stage2(page: int = 1, sort_by: str = "date", order: str = "desc", search: st
                 Td(item[16], style="font-size: smaller;"),  
                 Td(
                     A("Edit", href=f"/edit-book/{item[0]}", style="display:block;font-size: smaller;margin-bottom:3px; width:130px"),
-                    A("Move to Next Stage ", href=f"/move_to_stage3_from_stage2/{item[1]}", style="display:block;font-size: smaller;margin-bottom:3px"),
-                    A("Move to Previous Stage ", href=f"/move_to_stage1_from_stage2/{item[1]}", style="display:block;font-size: smaller;")
+                    A("Move to Next Stage ", href=f"/move_to_stage3_from_stage2/{item[0]}", style="display:block;font-size: smaller;margin-bottom:3px"),
+                    A("Move to Previous Stage ", href=f"/move_to_stage1_from_stage2/{item[0]}", style="display:block;font-size: smaller;")
                 )
             )
             for item in current_page_items
@@ -406,7 +408,7 @@ async def edit_in_stage2(id: int):
         # Name of recommender (non-editable)
         Group(
             H6("Recommender", style="margin-right: 10px; min-width: 60px; text-align: left;color: #53B6AC;"),
-            Input(id="recommender", readonly=True, style ="border:1.3px solid #53B6AC;"),  # Fetch recommender from stored data
+            Input(id="recommender", style ="border:1.3px solid #53B6AC;"),  # Fetch recommender from stored data
             style="display: flex; align-items: center; gap: 10px;"
         ),
         Group(
@@ -512,6 +514,7 @@ async def edit_in_stage2(id: int):
     )
 
     js = """
+    let debounceTimeout;
     async function load_book_details(){
         const isbn = document.getElementById('modified_isbn').value;
         console.log('Modified ISBN:', isbn);
@@ -520,6 +523,16 @@ async def edit_in_stage2(id: int):
         const title = document.getElementById('book_name');
         const subtitle = document.getElementById('sub_title');
         const publishers = document.getElementById('publisher');
+        
+        // Check if ISBN is valid (non-empty and has a reasonable length)
+        if (isbn.length < 10) {
+            authors.value = "";
+            title.value = "";
+            subtitle.value = "";
+            publishers.value = "";
+            return;  // Do nothing if ISBN is invalid
+        }
+        
         try {
             const response = await fetch(`/api/get-book-details?isbn=${isbn}`);
             console.log(response)
@@ -533,31 +546,69 @@ async def edit_in_stage2(id: int):
                     publishers.value = "";
                 } else {
                     console.log("found")
-                    console.log(data.authors)
                     authors.value = data.authors || "Unknown Authors";
-                    console.log(authors.value)
                     subtitle.value = data.subtitle;
                     title.value = data.title || "Unknown Title";
                     publishers.value = data.publishers || "Unknown Publishers";
                 }
             } else {
-                console.log("error in response");
-                authors.value ="";
-                title.value ="";
-                publishers.value ="";
+                authors.value = "";
+                title.value = "";
+                publishers.value = "";
             }
         } catch (error) {
-            authors.value ="";
-            title.value ="";
-            publishers.value ="";
+            authors.value = "";
+            title.value = "";
+            publishers.value = "";
         }
     };
-    //window.onload =
-    load_book_details();
-    document.getElementById('modified_isbn').oninput = load_book_details;
-    """
-    return (res,js)
 
+    // Debounce function to delay the API call
+    function debounce(func, delay) {
+        clearTimeout(debounceTimeout);
+        debounceTimeout = setTimeout(func, delay);
+    }
+
+    document.getElementById('modified_isbn').oninput = function() {
+        debounce(load_book_details, 500);  // Delay the API call by 500ms
+    };
+
+    // Function to fetch the recommender name from Gmail API based on email
+    async function fetch_gmail_name(){
+        const email = document.getElementById('email').value;
+        console.log('Fetching name for email:', email);
+
+        const recommenderField = document.getElementById('recommender');  // Recommender field where the name should go
+        try {
+            const response = await fetch(`/api/fetch-gmail-name?email=${email}`);
+            if (response.ok) {
+                const data = await response.json();
+                if (data.name) {
+                    recommenderField.value = data.name;  // Populate the name in the recommender field
+                }
+            } else {
+                console.log("No name found for this email");
+                recommenderField.value = "";  // In case of no match, clear the field
+            }
+        } catch (error) {
+            console.log("Error fetching name from Gmail:", error);
+            recommenderField.value = "";  // Clear the field in case of error
+        }
+    };
+
+    // Initialize book details and Gmail name on page load
+    window.onload = function() {
+        load_book_details();  // Load book details if any
+        fetch_gmail_name();   // Fetch Gmail name if the email is pre-filled
+    };
+
+    // Trigger book details load when modified ISBN is entered
+    document.getElementById('modified_isbn').oninput = load_book_details;
+
+    // Trigger Gmail name fetch when email input is updated
+    document.getElementById('email').oninput = fetch_gmail_name;
+"""
+    return (res, js)
 
 def stage3(page: int = 1, sort_by: str = "date_stage_update", order: str = "asc",search: str ="",date_range:str="all"):
     all_items = fetch.stage3()
@@ -712,8 +763,8 @@ def stage3(page: int = 1, sort_by: str = "date_stage_update", order: str = "asc"
                 Td(item[14], style="font-size: smaller; padding: 4px;maxwidth: 500px"),
                 Td((
                     A("Edit", href=f"/edit-book_stage3/{item[0]}", style="display:block;font-size: smaller;margin-bottom:3px; width:130px"),
-                    A("Move to Next Stage ", href=f"/move_to_stage4_from_stage3/{item[1]}", style="display:block;font-size: smaller;margin-bottom:3px"),
-                    A("Move to Previous Stage ", href=f"/move_to_stage2_from_stage3/{item[1]}", style="display:block;font-size: smaller;")) if item[15]==0 else (
+                    A("Move to Next Stage ", href=f"/move_to_stage4_from_stage3/{item[0]}", style="display:block;font-size: smaller;margin-bottom:3px"),
+                    A("Move to Previous Stage ", href=f"/move_to_stage2_from_stage3/{item[0]}", style="display:block;font-size: smaller;")) if item[15]==0 else (
                     A("Download", href=f"/download_clubbed/{item[16]}", style="display:block;font-size: smaller;margin-bottom:3px"),
                     A("Edit", href=f"/edit_clubbed/{item[16]}",style="display:block;font-size: smaller;margin-bottom:3px")
                     )
@@ -731,7 +782,7 @@ def stage3(page: int = 1, sort_by: str = "date_stage_update", order: str = "asc"
         H6("This displays the details for Stage 3, including editable fields like cost, currency, and remarks."),
         search_box,
         date_range_options,
-        Button("Club Rows", id="club-rows-button", style="margin-top: 10px; margin-bottom: 10px;",action ="/club-rows",method = "post"),
+        Button("Club Rows", id="club-rows-button", style="margin-top: 10px; ",action ="/club-rows",method = "post"),
         table,
         pagination_controls,
         header=Div(
@@ -795,6 +846,7 @@ async def edit_in_stage3(id: int):
             Input(id="isbn", readonly=True, style ="border:1.3px solid #53B6AC;"),  # Fetch ISBN from the stored data
             style="display: flex; align-items: center; gap: 10px;"
         ),
+        
         Group(
             H6("Status", style="margin-right: 10px; min-width: 60px; color: #D369A3; text-align: left;"),
             Select(
@@ -962,7 +1014,7 @@ def duplicate(page: int = 1, sort_by: str = "date", order: str = "desc", search:
                 Td(item[15], style="font-size: smaller;"),  # Date
                 Td(item[16], style="font-size: smaller;"),  
                 Td(
-                    A("Move to Initial  Stage ", href=f"/move_to_stage1_from_duplicate/{item[1]}", style="display:block;font-size: smaller;")
+                    A("Move to Initial  Stage ", href=f"/move_to_stage1_from_duplicate/{item[0]}", style="display:block;font-size: smaller;")
                 )
             )
             for item in current_page_items
@@ -1139,8 +1191,8 @@ def stage4(page: int = 1, sort_by: str = "date_stage_update", order: str = "asc"
                 Td(item[13], style="font-size: smaller; padding: 4px;"),
                 Td(item[14], style="font-size: smaller; padding: 4px;maxwidth: 500px"),
                 Td(
-                    A("Move to Next Stage ", href=f"/move_to_stage5_from_stage4/{item[1]}", style="display:block;font-size: smaller;margin-bottom:3px"),
-                    A("Move to Previous Stage ", href=f"/move_to_stage3_from_stage4/{item[1]}", style="display:block;font-size: smaller;")
+                    A("Move to Next Stage ", href=f"/move_to_stage5_from_stage4/{item[0]}", style="display:block;font-size: smaller;margin-bottom:3px"),
+                    A("Move to Previous Stage ", href=f"/move_to_stage3_from_stage4/{item[0]}", style="display:block;font-size: smaller;")
                 )
             )
             for item in current_page_items
@@ -1317,7 +1369,7 @@ def notapproved(page: int = 1, sort_by: str = "date_stage_update", order: str = 
                 Td(item[13], style="font-size: smaller; padding: 4px;"),
                 Td(item[14], style="font-size: smaller; padding: 4px;maxwidth: 500px"),
                 Td(
-                    A("Move to Previous Stage ", href=f"/move_to_stage3_from_notapproved/{item[1]}", style="display:block;font-size: smaller;")
+                    A("Move to Previous Stage ", href=f"/move_to_stage3_from_notapproved/{item[0]}", style="display:block;font-size: smaller;")
                 )
             )
             for item in current_page_items
@@ -1501,8 +1553,8 @@ def stage5(page: int = 1, sort_by: str = "date_stage_update", order: str = "asc"
                 Td(item[17], style="font-size: smaller; padding: 4px;maxwidth: 500px"),
                 Td(
                     A("Edit", href=f"/edit-book_stage5/{item[0]}", style="display:block;font-size: smaller;margin-bottom:3px; width:130px"),
-                    A("Move to Next Stage ", href=f"/move_to_stage6_from_stage5/{item[1]}", style="display:block;font-size: smaller;margin-bottom:3px"),
-                    A("Move to Previous Stage ", href=f"/move_to_stage4_from_stage5/{item[1]}", style="display:block;font-size: smaller;")
+                    A("Move to Next Stage ", href=f"/move_to_stage6_from_stage5/{item[0]}", style="display:block;font-size: smaller;margin-bottom:3px"),
+                    A("Move to Previous Stage ", href=f"/move_to_stage4_from_stage5/{item[0]}", style="display:block;font-size: smaller;")
                 )
             )
             for item in current_page_items
@@ -1725,7 +1777,7 @@ def stage11(page: int = 1, sort_by: str = "date_stage_update", order: str = "asc
                 Td(item[16], style="font-size: smaller; padding: 4px;"),
                 Td(item[17], style="font-size: smaller; padding: 4px;maxwidth: 500px"),
                 Td(
-                    A("Move to Previous Stage ", href=f"/move_to_stage5_from_stage11/{item[1]}", style="display:block;font-size: smaller;")
+                    A("Move to Previous Stage ", href=f"/move_to_stage5_from_stage11/{item[0]}", style="display:block;font-size: smaller;")
                 )
             )
             for item in current_page_items
@@ -1911,8 +1963,8 @@ def stage6(page: int = 1, sort_by: str = "date_stage_update", order: str = "asc"
                 Td(item[18], style="font-size: smaller; padding: 4px;maxwidth: 500px"),
                 Td(
                     A("Edit", href=f"/edit-book_stage6/{item[0]}", style="display:block;font-size: smaller;margin-bottom:3px; width:130px"),
-                    A("Move to Next Stage ", href=f"/move_to_stage7_from_stage6/{item[1]}", style="display:block;font-size: smaller;margin-bottom:3px"),
-                    A("Move to Previous Stage ", href=f"/move_to_stage5_from_stage6/{item[1]}", style="display:block;font-size: smaller;")
+                    A("Move to Next Stage ", href=f"/move_to_stage7_from_stage6/{item[0]}", style="display:block;font-size: smaller;margin-bottom:3px"),
+                    A("Move to Previous Stage ", href=f"/move_to_stage5_from_stage6/{item[0]}", style="display:block;font-size: smaller;")
                 )
             )
             for item in current_page_items
@@ -2228,8 +2280,8 @@ def stage7(page: int = 1, sort_by: str = "date_stage_update", order: str = "asc"
                 Td(item[19], style="font-size: smaller; padding: 4px;maxwidth: 500px"),
                 Td(
                     A("Edit", href=f"/edit-book_stage7/{item[0]}", style="display:block;font-size: smaller;margin-bottom:3px; width:130px"),
-                    A("Move to Next Stage ", href=f"/move_to_stage8_from_stage7/{item[1]}", style="display:block;font-size: smaller;margin-bottom:3px"),
-                    A("Move to Previous Stage ", href=f"/move_to_stage6_from_stage7/{item[1]}", style="display:block;font-size: smaller;")
+                    A("Move to Next Stage ", href=f"/move_to_stage8_from_stage7/{item[0]}", style="display:block;font-size: smaller;margin-bottom:3px"),
+                    A("Move to Previous Stage ", href=f"/move_to_stage6_from_stage7/{item[0]}", style="display:block;font-size: smaller;")
                 )
             )
             for item in current_page_items
@@ -2450,7 +2502,7 @@ def stage8(page: int = 1, sort_by: str = "date_stage_update", order: str = "asc"
                 Td(item[20], style="font-size: smaller; padding: 4px;maxwidth: 500px"),
                 Td(
                     A("Edit", href=f"/edit-book_stage8/{item[0]}", style="display:block;font-size: smaller;margin-bottom:3px; width:130px"),
-                    A("Move to Previous Stage ", href=f"/move_to_stage7_from_stage8/{item[1]}", style="display:block;font-size: smaller;")
+                    A("Move to Previous Stage ", href=f"/move_to_stage7_from_stage8/{item[0]}", style="display:block;font-size: smaller;")
                 )
             )
             for item in current_page_items
@@ -2509,31 +2561,9 @@ async def edit_in_stage8(id: int):
     return res
 
 def clubbed(c_id):
-    header = (
-        A('Back', href='/stage3', role="button", style=" margin-bottom: 10px;"),
-        Button("Approved",id="approvedButton", style="margin-bottom: 10px; display: none; margin-left: 10px;",action="/approve_selected",method="post"),
-        Button("Move to next stage",id="moveToNextStageButton", style="margin-bottom: 10px; display: none; margin-left: 10px;",action="/move_selected",method="post"),
-
-    )
     items = fetch.clubbed(c_id)
     table = Table(
         Tr(
-            Th(
-            Input(
-                type="checkbox", 
-                name="select_all", 
-                style="margin: auto;", 
-                onclick="""
-                 const checkboxes = document.querySelectorAll('input[name="row_checkbox"]');
-                console.log('Found checkboxes:', checkboxes);
-                checkboxes.forEach(checkbox => checkbox.checked = this.checked);
-                updateSelectAllBoxandButtons();
-                """,
-            ),
-            "Select All",
-            style="font-weight: 1000;font-size: 13px; text-align: center;"
-            ),
-           # Th("Select", style="font-weight: 1000; text-align: center;"),
             Th("ID", style="font-weight: 1000; text-align: center;"),
             Th("ISBN", style=" align-items: center; font-weight: 1000;"),
             Th("Title", style="font-weight: 1000; text-align: center;"),
@@ -2553,11 +2583,6 @@ def clubbed(c_id):
         ),
         *[
             Tr(
-                Td(
-                    Input(type="checkbox", name="row_checkbox",
-                          value=item[0], style="margin: auto;", onchange="updateSelectAllBoxandButtons()"),
-                style="text-align: center; padding: 4px;"
-            ),
                 Td(item[0], style="font-size: smaller; padding: 4px;"),
                 Td(item[1], style="font-size: smaller; padding: 4px;"),
                 Td(item[2], style="font-size: smaller; padding: 4px;"),
@@ -2575,99 +2600,23 @@ def clubbed(c_id):
                 Td(item[14], style="font-size: smaller; padding: 4px;maxwidth: 500px"),
                 Td(
                     A("Edit", href=f"/edit-book_stage3/{item[0]}", style="display:block;font-size: smaller;margin-bottom:3px; width:130px"),
-                    A("Move to Next Stage ", href=f"/move_to_stage4_from_stage3/{item[1]}", style="display:block;font-size: smaller;margin-bottom:3px"),
-                    A("Move to Previous Stage ", href=f"/move_to_stage2_from_stage3/{item[1]}", style="display:block;font-size: smaller;"),
+                    A("Move to Next Stage ", href=f"/move_to_stage4_from_stage3/{item[0]}", style="display:block;font-size: smaller;margin-bottom:3px"),
+                    A("Move to Previous Stage ", href=f"/move_to_stage2_from_stage3/{item[0]}", style="display:block;font-size: smaller;"),
                     A("Remove from club", href=f"/remove-club/{item[0]}", style="display:block;font-size: smaller;margin-bottom:3px")
             )
         )
             for item in items
         ],
-        id = "club-book-table",
+        id = "book-table",
         style="border-collapse: collapse; width: 100%;",
         **{"border": "1"}
     )
-    js = """
-        function updateSelectAllBoxandButtons() {
-                const checkboxes = document.querySelectorAll('input[name="row_checkbox"]');
-                console.log('Found checkboxes:', checkboxes);
-                const selectAllCheckbox = document.querySelector('input[name="select_all"]');
-                const allChecked = Array.from(checkboxes).every(checkbox => checkbox.checked);
-                console.log('All checked:', allChecked);
-                selectAllCheckbox.checked = allChecked;
-
-                const anySelected = Array.from(checkboxes).some(checkbox => checkbox.checked);
-                const approvedButton = document.getElementById('approvedButton');
-                approvedButton.style.display = anySelected ? 'inline-block' : 'none';
-                moveToNextStageButton.style.display = anySelected ? 'inline-block' : 'none';
-        }
-
-        document.getElementById('approvedButton').onclick = function () {
-        const selectedRows = Array.from(document.querySelectorAll('input[name="row_checkbox"]:checked')).map(cb => cb.value);
-        if (selectedRows.length > 0) {
-            fetch('http://localhost:5001/approve_selected', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ mixedRow: selectedRows })
-            })
-                .then(response => {
-                    if (!response.ok) {
-                        throw new Error(`HTTP error! status: ${response.status}`);
-                    }
-                    return response.json();
-                })
-                .then(data => {
-                    document.querySelectorAll('input[name="row_checkbox"]:checked').forEach(cb => cb.checked = false);
-                    const selectAllCheckbox = document.querySelector('input[name="select_all"]');
-                    if(selectAllCheckbox.checked){
-                        selectAllCheckbox.checked = false;
-                    }
-                    setTimeout(() => location.reload(), 100);
-                })
-                .catch(error => {
-                    alert( error.message);
-                });
-        } else {
-            alert('Select atleast one row to approve.');
-        }};
-
-    document.getElementById('moveToNextStageButton').onclick = function () {
-    const selectedRows = Array.from(document.querySelectorAll('input[name="row_checkbox"]:checked')).map(cb => cb.value);
-    if (selectedRows.length > 0) {
-        fetch('http://localhost:5001/move_selected', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ mixedRow: selectedRows })
-            })
-        .then(response => {
-            if (!response.ok) {
-                return response.json().then(errorData => {
-                    throw new Error(errorData.message || "Unknown error occurred");
-                    });
-                }
-            return response.json();
-            })
-        .then(data => {
-            document.querySelectorAll('input[name="row_checkbox"]:checked').forEach(cb => cb.checked = false);
-            const selectAllCheckbox = document.querySelector('input[name="select_all"]');
-            if(selectAllCheckbox.checked){
-                selectAllCheckbox.checked = false;
-                }
-            setTimeout(() => location.reload(), 100);
-            })
-        .catch(error => {
-            alert(error.message);
-            });
-        } else {
-            alert('Select atleast one row to move.');
-        }};
-"""
     card = Card(
             H3("Clubbed Books"),
-            header,
             table
             )
 
-    return (card,Script(src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.1/fabric.min.js"),Script(js))
+    return (card)
 
 def globalsearch(page: int = 1, sort_by: str = "date", order: str = "desc", search: str = search1, date_range: str = "all", items_per_page: int = 10):
     print(search)
@@ -2811,3 +2760,183 @@ def globalsearch(page: int = 1, sort_by: str = "date", order: str = "desc", sear
         ),
     )
     return Titled('Search Details', card)
+
+def stage12(page: int = 1, sort_by: str = "date", order: str = "desc", search: str= "", date_range: str = "all"):
+    
+    all_items = fetch.stage12()
+    all_items = functions.filter_by_date2(all_items, date_range)
+    if search:
+        search_lower = search.lower()
+        all_items = [
+            item for item in all_items
+            if any(search_lower in str(value).lower() for value in item)
+        ]
+
+    if sort_by in ["date", "email"]:
+        reverse = order == "desc"  # Set reverse based on 'desc' order
+        column_index = {"date": 15, "email": 4}[sort_by]
+        all_items.sort(key=lambda x: x[column_index], reverse=reverse)
+
+    # Pagination calculations
+    total_items = len(all_items)
+    total_pages = (total_items + items_per_page - 1) // items_per_page
+    start_index = (page - 1) * items_per_page
+    end_index = start_index + items_per_page
+    current_page_items = all_items[start_index:end_index]
+
+    # Pagination controls
+    visible_pages = 5
+    half_visible = visible_pages // 2
+    start_page = max(1, page - half_visible)
+    end_page = min(total_pages, page + half_visible)
+
+    if page <= half_visible:
+        end_page = min(total_pages, visible_pages)
+    if page > total_pages - half_visible:
+        start_page = max(1, total_pages - visible_pages + 1)
+
+    pagination_controls = Div(
+        *(
+            [
+                A("«", href=f"/stage12?page={page - 1}&sort_by={sort_by}&order={order}&search={search}date_range={date_range}", style="margin-right: 10px;font-size: x-large;" + ("visibility: hidden;" if page == 1 else "visibility: visible;")),
+            ]
+            + [
+                A(
+                    str(i),
+                    href=f"/stage12?page={i}&sort_by={sort_by}&order={order}&search={search}date_range={date_range}",
+                    style="margin-right: 10px; text-decoration: none; font-size: x-large ; " +
+                    ("font-weight: bold;" if i == page else "font-weight: normal;")
+                )
+                for i in range(start_page, end_page + 1)
+            ]
+            + [
+                A("»", href=f"/stage12?page={page + 1}&sort_by={sort_by}&order={order}&search={search}date_range={date_range}", style="margin-left: 10px;font-size: x-large;" + ("visibility: hidden;" if page == total_pages else "visibility: visible;"))
+            ]
+        ),
+        style="margin-top: 10px; text-align: center;"
+    )
+
+    search_box = Form(
+        Group(
+            Input(type="text", name="search", value=search, placeholder="Search...", style="margin-right: 10px; padding: 5px;"),
+            Input(type="hidden", name="date_range", value=date_range),
+            Button("Search", type="submit", style="font-weight: 600;"),
+            style="display: flex; align-items: center;"
+        ),
+        action="/stage12", method="get"
+    )
+    global_search_box = Form(
+        Group(
+            Input(type="text", name="search1", value=search1, placeholder="Search...", style="margin-right: 10px; padding: 5px;",required=True),
+            Input(type="hidden", name="date_range", value=date_range), 
+            Button("Search", type="submit", style="font-weight: 600;"),
+            style="display: flex; align-items: center;"
+        ),
+        action="/search", method="get"
+    )
+    def get_sort_icon(column):
+        if sort_by == column:
+            return "▲" if order == "asc" else "▼"
+        return "⇅"
+    def create_sort_link(column):
+        new_order = "asc" if sort_by == column and order == "desc" else "desc"
+
+        return A(
+            get_sort_icon(column),
+            href=f"/stage12?page={page}&sort_by={column}&order={new_order}&search={search}date_range={date_range}",
+            style="text-decoration: none; font-size: small; margin-left: 5px;"
+        )
+    date_range_options = Form(
+        Group(
+            Input(type="hidden", name="search", value=search),
+            Input(type="radio", name="date_range", value="all", id="all", checked=(date_range == "all"),onchange="this.form.submit()"),
+            Label("All", for_="all", style="margin-right: 10px;"),
+            Input(type="radio", name="date_range", value="1month", id="1month", checked=(date_range == "1month"),onchange="this.form.submit()"),
+            Label("Last 1 Month", for_="1month", style="margin-right: 10px;"),
+            Input(type="radio", name="date_range", value="3months", id="3months", checked=(date_range == "3months"),onchange="this.form.submit()"),
+            Label("Last 3 Months", for_="3months", style="margin-right: 10px;"),
+            Input(type="radio", name="date_range", value="6months", id="6months", checked=(date_range == "6months"),onchange="this.form.submit()"),
+            Label("Last 6 Months", for_="6months"),
+            style="margin-bottom: 20px; display: flex; align-items: center;"
+        ),
+        action="/stage12", method="get"
+    )
+
+
+    # Generate the table with sortable headers for "Date" and "Email"
+    table = Table(
+        Tr(
+            Th("Id", style="font-weight: 1000; text-align: center;"),
+            Th("ISBN", style="font-weight: 1000; text-align: center;"),
+            Th("Modified_ISBN", style="font-weight: 1000; text-align: center;"),
+            Th("Recommender", style="font-weight: 1000; text-align: center;"),
+            Th(Div("Email", create_sort_link("email"), style="""display: inline-flex; align-items: center; font-weight: 1000; text-align: center; justify-content: center;width: 100%; height: 100%;""")),
+            Th("Number of Copies", style="font-weight: 1000; text-align: center;"),
+            Th("Title", style="font-weight: 1000; text-align: center;"),
+            Th("Sub-Title", style="font-weight: 1000; text-align: center;"),
+            Th("Purpose of Recommendation", style="font-weight: 1000; text-align: center;"),
+            Th("Remarks", style="font-weight: 1000; text-align: center;"),
+            Th("Publisher", style="font-weight: 1000; text-align: center;"),
+            Th("Edition/Year", style="font-weight: 1000; text-align: center;"),
+            Th("Author", style="font-weight: 1000; text-align: center;"),
+            Th("Currency", style="font-weight: 1000; text-align: center;"),
+            Th("Cost in Currency", style="font-weight: 1000; text-align: center;"),
+            Th(Div("Date", create_sort_link("date"), style="""display: inline-flex; align-items: center; font-weight: 1000; text-align: center; justify-content: center;width: 100%; height: 100%;""")),
+            Th("Availability", style="font-weight: 1000; text-align: center;"),
+            Th("Action", style="font-weight: 1000; text-align: center;")
+        ),
+        *[
+            Tr(
+                Td(item[0], style="font-size: smaller;"),
+                Td(item[1], style="font-size: smaller;"),   # ISBN
+                Td(item[2], style="font-size: smaller;"),   # Modified ISBN
+                Td(item[3], style="font-size: smaller;"),   # Recommender
+                Td(item[4], style="font-size: smaller;"),   # Email
+                Td(item[5], style="font-size: smaller;"),   # Number of Copies
+                Td(item[6], style="font-size: smaller;"),   # Name of Book
+                Td(item[7], style="font-size: smaller;"),   # Remarks
+                Td(item[8], style="font-size: smaller;"),   # Publisher
+                Td(item[9], style="font-size: smaller;"),
+                Td(item[10], style="font-size: smaller;"),
+                Td(item[11], style="font-size: smaller;"),
+                Td(item[12], style="font-size: smaller;"),
+                Td(item[13], style="font-size: smaller;"),
+                Td(item[14], style="font-size: smaller;"),  
+                Td(item[15], style="font-size: smaller;"),  # Date
+                Td(item[16], style="font-size: smaller;"),  
+                Td(
+                    
+                    A("Move to Previous Stage ", href=f"/move_to_stage2_from_stage12/{item[0]}", style="display:block;font-size: smaller;")
+                )
+            )
+            for item in current_page_items
+        ],
+        style="border-collapse: collapse; width: 100%;",
+        **{"border": "1"}  # Add border to the table
+    )
+
+    # Card for displaying the book list in stage 2
+    card = Card(
+        H3("ISBN not found"),  
+        search_box,
+        date_range_options,
+        table,  # Display the table
+        pagination_controls,  # Add pagination controls
+        header=Div(
+            A("Initiated", href="/", role="button", style="margin-left: 10px; white-space: nowrap ; height:50px; font-weight: 700;"),
+            A("Approval Pending", href="/stage3", role="button", style="margin-left: 10px; white-space: nowrap ; height:50px; font-weight: 700;"),
+            A("Approved", href="/stage4", role="button", style="margin-left: 10px; white-space: nowrap ; height:50px; font-weight: 700;"),
+            A("Under enquiry", href="/stage5", role="button", style="margin-left: 10px; white-space: nowrap ; height:50px; font-weight: 700;"),
+            A("Ordered", href="/stage6", role="button", style="margin-left: 10px; white-space: nowrap ; height:50px; font-weight: 700;"),
+            A("Received", href="/stage7", role="button", style="margin-left: 10px; white-space: nowrap ; height:50px; font-weight: 700;"),
+            A("Processed", href="/stage8", role="button", style="margin-left: 10px; white-space: nowrap ; height:50px; font-weight: 700;"),
+            A("Duplicates", href="/duplicate", role="button", style="margin-left: 10px; white-space: nowrap ; height:50px; font-weight: 700;"),
+            A("Not Approved", href="/notapproved", role="button", style="margin-left: 10px; white-space: nowrap ; height:50px; font-weight: 700;"),
+            A("Not Available", href="/stage11", role="button", style="margin-left: 10px; white-space: nowrap ; height:50px; font-weight: 700;"),
+            A("Download All", href="/downloadentire", role="button", style="margin-left: 10px; white-space: nowrap ; height:50px; font-weight: 700;"),
+            A("Download isbn wrong books", href="/downloadstage12", role="button", style="margin-left: 10px; white-space: nowrap ; height:50px; font-weight: 700;"),
+            global_search_box,
+            style="display: flex; gap: 10px;"  # Flexbox for layout
+        )
+    )
+    return Titled('Stage 2 - ISBN not found', card)

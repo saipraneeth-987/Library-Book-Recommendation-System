@@ -73,14 +73,20 @@ class RowData(BaseModel):
 async def get_book_details_api(isbn: str ):
     return functions.get_book_details(isbn)
 
+@app.get("/api/fetch-gmail-name")
+async def fetch_gmail_name_api(email: str):
+    name = functions.fetch_name_from_gmail(email)  # Call your Gmail API fetching function
+    return {"name": name}
+
+
 @app.get("/")
 def home(page: int = 1, sort_by: str = "date", order: str = "desc",search: str = "", date_range: str = "all"):
     return view.stage1(page, sort_by, order,search, date_range)
 
 # Function to move the item to stage 2
-@app.get("/move_to_stage2_from_stage1/{isbn}")
-def move_to_stage2(isbn: int):
-    functions.update_stage(isbn,1,2)
+@app.get("/move_to_stage2_from_stage1/{id}")
+def move_to_stage2(id: int):
+    functions.update_stage(id,1,2)
     return RedirectResponse("/stage2", status_code=302)
 
 @app.get("/downloadentire")
@@ -105,15 +111,15 @@ def stage2(page: int = 1, sort_by: str = "date", order: str = "desc", search: st
 def download_csv():
     return download.download_stage2()
 
-@app.get("/move_to_stage1_from_stage2/{isbn}")
-def move_to_stage1_from_stage2(isbn: int):
-    functions.update_stage(isbn,2,1)
+@app.get("/move_to_stage1_from_stage2/{id}")
+def move_to_stage1_from_stage2(id: int):
+    functions.update_stage(id,2,1)
     
     return RedirectResponse("/", status_code=302)
 
 
-@app.get("/move_to_stage3_from_stage2/{isbn}")
-def move_to_stage3_from_stage2(isbn: int):
+@app.get("/move_to_stage3_from_stage2/{id}")
+def move_to_stage3_from_stage2(id: int):
     # Check if the book is fully updated with all mandatory fields
     connection = sqlite3.connect('data/library.db')
     cursor = connection.cursor()
@@ -121,8 +127,8 @@ def move_to_stage3_from_stage2(isbn: int):
     cursor.execute("""
         SELECT number_of_copies, book_name, publisher, edition_or_year, authors, currency, cost_currency,availability_stage2
         FROM items
-        WHERE isbn = ? AND current_stage = 2
-    """, (isbn,))
+        WHERE id = ? AND current_stage = 2
+    """, (id,))
     
     result = cursor.fetchone()
     connection.close()
@@ -153,13 +159,13 @@ def move_to_stage3_from_stage2(isbn: int):
         
         # If all mandatory fields are filled, proceed to move to stage 3
         if availability_stage2 == "No":
-            functions.update_stage(isbn, 2, 3)
+            functions.update_stage(id, 2, 3)
             return RedirectResponse("/stage3", status_code=302)
         if availability_stage2 == "Yes":
-            functions.update_stage(isbn, 2, 9)
+            functions.update_stage(id, 2, 9)
             return RedirectResponse("/duplicate", status_code=302)
         if availability_stage2 == "No Book found":
-            functions.update_stage(isbn, 2, 9)
+            functions.update_stage(id, 2, 9)
             return RedirectResponse("/duplicate", status_code=302)
         
     
@@ -167,9 +173,19 @@ def move_to_stage3_from_stage2(isbn: int):
 
 @app.get("/edit-book/{id}")
 async def edit_book(id: int):
-    res,js = await view.edit_in_stage2(id)
-    frm = fill_form(res,items[id] )
-    return Titled('Edit Book Recommendation', frm, Script(src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.1/fabric.min.js"), Script(js))
+    # Get the form and the JavaScript code
+    res, js = await view.edit_in_stage2(id)
+    
+    # Retrieve the book details to fill the form (assuming `items` contains your data)
+    frm = fill_form(res, items[id])
+    
+    # Ensure the script for fetching book details and Gmail name is included
+    return Titled(
+        'Edit Book Recommendation',
+        frm,
+        Script(src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.1/fabric.min.js"),  # If needed
+        Script(js)  # Include your custom JS to fetch book details and Gmail name
+    )
 
 @app.post("/update-bookstage2")
 def update_bookstage2(
@@ -258,8 +274,8 @@ def download_csv():
 
 
 
-@app.get("/move_to_stage4_from_stage3/{isbn}")
-def move_to_stage4_from_stage3(isbn: int):
+@app.get("/move_to_stage4_from_stage3/{id}")
+def move_to_stage4_from_stage3(id: int):
     try:
         # Connect to the database
         connection = sqlite3.connect('data/library.db')
@@ -269,8 +285,8 @@ def move_to_stage4_from_stage3(isbn: int):
         cursor.execute("""
             SELECT status
             FROM items
-            WHERE isbn = ? AND current_stage = 3
-        """, (isbn,))
+            WHERE id = ? AND current_stage = 3
+        """, (id,))
         result = cursor.fetchone()
     except sqlite3.Error as e:
         return {"error": f"Database error: {str(e)}"}
@@ -282,10 +298,10 @@ def move_to_stage4_from_stage3(isbn: int):
 
         # Handle status-based transitions
         if status == "approved":
-            functions.update_stage(isbn, 3, 4)
+            functions.update_stage(id, 3, 4)
             return RedirectResponse("/stage4", status_code=302)
         elif status == "rejected":
-            functions.update_stage(isbn, 3, 10)
+            functions.update_stage(id, 3, 10)
             return RedirectResponse("/notapproved", status_code=302)
         else:
             return {"error": f"Invalid status '{status}'. Only 'approved' or 'rejected' are valid."}
@@ -293,9 +309,9 @@ def move_to_stage4_from_stage3(isbn: int):
         return {"error": "No book found with the given ISBN in stage 3."}
 
 
-@app.get("/move_to_stage2_from_stage3/{isbn}")
-def move_to_stage2_from_stage3(isbn: int):
-    functions.update_stage(isbn,3,2)
+@app.get("/move_to_stage2_from_stage3/{id}")
+def move_to_stage2_from_stage3(id: int):
+    functions.update_stage(id,3,2)
     return RedirectResponse("/stage2", status_code=302)
     
 
@@ -346,9 +362,9 @@ def duplicate(page: int = 1, sort_by: str = "date_stage_update", order: str = "d
 def download_csv():
     return download.download_duplicate()
 
-@app.get("/move_to_stage1_from_duplicate/{isbn}")
-def move_to_stage1_from_duplicate(isbn: int):
-    functions.update_stage(isbn,9,1)
+@app.get("/move_to_stage1_from_duplicate/{id}")
+def move_to_stage1_from_duplicate(id: int):
+    functions.update_stage(id,9,1)
     return RedirectResponse("/", status_code=302)
 
 @app.get("/stage4")
@@ -359,14 +375,14 @@ def stage4(page: int = 1, sort_by: str = "date_stage_update", order: str = "desc
 def download_csv():
     return download.download_stage4()
 
-@app.get("/move_to_stage5_from_stage4/{isbn}")
-def move_to_stage5_from_stage4(isbn: int):
-    functions.update_stage(isbn,4,5)
+@app.get("/move_to_stage5_from_stage4/{id}")
+def move_to_stage5_from_stage4(id: int):
+    functions.update_stage(id,4,5)
     return RedirectResponse("/stage5", status_code=302)
 
-@app.get("/move_to_stage3_from_stage4/{isbn}")
-def move_to_stage3_from_stage4(isbn: int):
-    functions.update_stage(isbn,4,3)
+@app.get("/move_to_stage3_from_stage4/{id}")
+def move_to_stage3_from_stage4(id: int):
+    functions.update_stage(id,4,3)
     return RedirectResponse("/stage3", status_code=302)
 
 @app.get("/notapproved")  #stage 10
@@ -377,9 +393,9 @@ def notapproved(page: int = 1, sort_by: str = "date_stage_update", order: str = 
 def download_csv():
     return download.download_notapproved()
 
-@app.get("/move_to_stage3_from_notapproved/{isbn}")
-def move_to_stage1_from_notapproved(isbn: int):
-    functions.update_stage(isbn,10,3)
+@app.get("/move_to_stage3_from_notapproved/{id}")
+def move_to_stage1_from_notapproved(id: int):
+    functions.update_stage(id,10,3)
     return RedirectResponse("/stage3", status_code=302)
 
 
@@ -392,8 +408,8 @@ def download_csv():
     return download.download_stage5()
 
 
-@app.get("/move_to_stage6_from_stage5/{isbn}")
-def move_to_stage6_from_stage5(isbn: int):
+@app.get("/move_to_stage6_from_stage5/{id}")
+def move_to_stage6_from_stage5(id: int):
     try:
         # Connect to the database
         connection = sqlite3.connect('data/library.db')
@@ -403,8 +419,8 @@ def move_to_stage6_from_stage5(isbn: int):
         cursor.execute("""
             SELECT availability_stage5
             FROM items
-            WHERE isbn = ? AND current_stage = 5
-        """, (isbn,))
+            WHERE id= ? AND current_stage = 5
+        """, (id,))
         result = cursor.fetchone()
     except sqlite3.Error as e:
         return {"error": f"Database error: {str(e)}"}
@@ -416,19 +432,19 @@ def move_to_stage6_from_stage5(isbn: int):
 
         # Handle status-based transitions
         if Availability == "Available":
-            functions.update_stage(isbn, 5, 6)
+            functions.update_stage(id, 5, 6)
             return RedirectResponse("/stage6", status_code=302)
         elif Availability == "Not Available":
-            functions.update_stage(isbn, 5, 11)
+            functions.update_stage(id, 5, 11)
             return RedirectResponse("/stage11", status_code=302)
         else:
             return {"error": f"Invalid status '{Availability}'. Only 'Available' or 'Not Available' are valid."}
     else:
         return {"error": "No book found with the given ISBN in stage 5."}
 
-@app.get("/move_to_stage4_from_stage5/{isbn}")
-def move_to_stage4_from_stage5(isbn: int):
-    functions.update_stage(isbn,5,4)
+@app.get("/move_to_stage4_from_stage5/{id}")
+def move_to_stage4_from_stage5(id: int):
+    functions.update_stage(id,5,4)
     return RedirectResponse("/stage4", status_code=302)
     
 
@@ -479,9 +495,9 @@ def stage11(page: int = 1, sort_by: str = "date_stage_update", order: str = "des
 def download_csv():
     return download.download_stage11()
 
-@app.get("/move_to_stage5_from_stage11/{isbn}")
-def move_to_stage5_from_stage11(isbn: int):
-    functions.update_stage(isbn,11,5)
+@app.get("/move_to_stage5_from_stage11/{id}")
+def move_to_stage5_from_stage11(id: int):
+    functions.update_stage(id,11,5)
     return RedirectResponse("/stage5", status_code=302)
 
 @app.get("/stage6")
@@ -493,9 +509,9 @@ def download_csv():
     return download.download_stage6()
 
 
-@app.get("/move_to_stage5_from_stage6/{isbn}")
-def move_to_stage5_from_stage6(isbn: int):
-    functions.update_stage(isbn,6,5)
+@app.get("/move_to_stage5_from_stage6/{id}")
+def move_to_stage5_from_stage6(id: int):
+    functions.update_stage(id,6,5)
     return RedirectResponse("/stage7", status_code=302)
 
 @app.get("/edit-book_stage6/{id}")
@@ -583,8 +599,8 @@ def update_bookstage6(
 
     return RedirectResponse(url="/stage6", status_code=302)
 
-@app.get("/move_to_stage7_from_stage6/{isbn}")
-def move_to_stage7_from_stage6(isbn: int):
+@app.get("/move_to_stage7_from_stage6/{id}")
+def move_to_stage7_from_stage6(id: int):
     # Check if the book is fully updated with all mandatory fields
     connection = sqlite3.connect('data/library.db')
     cursor = connection.cursor()
@@ -592,8 +608,8 @@ def move_to_stage7_from_stage6(isbn: int):
     cursor.execute("""
         SELECT number_of_copies, book_name, publisher, edition_or_year, authors, currency, cost_currency,availability_stage5,supplier_info
         FROM items
-        WHERE isbn = ? AND current_stage = 6
-    """, (isbn,))
+        WHERE id = ? AND current_stage = 6
+    """, (id,))
     result = cursor.fetchone()
     connection.close()
     if result:
@@ -625,10 +641,10 @@ def move_to_stage7_from_stage6(isbn: int):
                     }
         # If all mandatory fields are filled, proceed to move to stage 3
         if availability_stage5 == "Available":
-            functions.update_stage(isbn, 6, 7)
+            functions.update_stage(id, 6, 7)
             return RedirectResponse("/stage7", status_code=302)
         if availability_stage5 == "Not Available":
-            functions.update_stage(isbn, 6, 11)
+            functions.update_stage(id, 6, 11)
             return RedirectResponse("/stage11", status_code=302)
     return {"error": "No book found with the given ISBN in stage 6."}
 
@@ -641,14 +657,14 @@ def stage7(page: int = 1, sort_by: str = "date_stage_update", order: str = "desc
 def download_csv():
     return download.download_stage7()
 
-@app.get("/move_to_stage8_from_stage7/{isbn}")
-def move_to_stage8_from_stage7(isbn: int):
-    functions.update_stage(isbn,7,8)
+@app.get("/move_to_stage8_from_stage7/{id}")
+def move_to_stage8_from_stage7(id: int):
+    functions.update_stage(id,7,8)
     return RedirectResponse("/stage8", status_code=302)
 
-@app.get("/move_to_stage6_from_stage7/{isbn}")
-def move_to_stage6_from_stage7(isbn: int):
-    functions.update_stage(isbn,7,6)
+@app.get("/move_to_stage6_from_stage7/{id}")
+def move_to_stage6_from_stage7(id: int):
+    functions.update_stage(id,7,6)
     return RedirectResponse("/stage6", status_code=302)
 
 
@@ -694,9 +710,9 @@ def stage8(page: int = 1, sort_by: str = "date_stage_update", order: str = "desc
 def download_csv():
     return download.download_stage8()
 
-@app.get("/move_to_stage7_from_stage8/{isbn}")
-def move_to_stage6_from_stage7(isbn: int):
-    functions.update_stage(isbn,8,7)
+@app.get("/move_to_stage7_from_stage8/{id}")
+def move_to_stage6_from_stage7(id: int):
+    functions.update_stage(id,8,7)
     return RedirectResponse("/stage7", status_code=302)
 
 @app.get("/edit-book_stage8/{id}")
@@ -750,23 +766,30 @@ async def club_rows(data: RowData):
                 print(c_id)
                 c_id = int(c_id)
             for row in mixed_row:
+                print(row)
                 if "|" in row:
                     indices = row.split("|")
+                    print(indices)
                     for index in indices:
                         id = int(index.strip())
                         book = items(where=f"id ={id}")[0]
+                        print(book)
                         book.clubbed = True
                         book.c_id = c_id+1
                         items.update(book)
                 else:
                     id = int(row.strip())
+                    print(id)
                     book = items(where=f"id ={id}")[0]
+                    print(book)
                     book.clubbed = True
                     new_c_id = c_id+1
                     book.c_id = new_c_id
                     items.update(book)
+
             print(f"Processing rows: {mixed_row}")
         return {"message": f"Rows successfully clubbed"}
+
     except Exception as e:
         return JSONResponse(content={"message": f"Error clubbing rows: {str(e)}"}, status_code=500)
 
@@ -784,19 +807,19 @@ def remove_clubbed(id: int):
     book = items(where=f"id ={id}")[0]
     c_id = book.c_id
     same_cid_items = items(where=f"c_id ={c_id} and current_stage = 3")
+    #print(same_cid_items)
     if (len(same_cid_items) == 2):
         other_book = items(where=f"c_id ={c_id} and current_stage = 3 and id != {id}")[0]
         #print(other_book)
         other_book.clubbed = False
         other_book.c_id = None
         items.update(other_book)
-        #print(other_book)
 
     #print(book)
     book.clubbed = False
     book.c_id = None
     items.update(book)
-    #print(book)
+
     return RedirectResponse("/stage3", status_code=302)
 
 @app.get("/search")
@@ -807,50 +830,6 @@ def globalsearch(page: int = 1, sort_by: str = "date_stage_update", order: str =
 @app.get("/downloadsearch/{search}")
 def download_csv(search: str):
     return download.download_search_data(search)
-
-@app.post("/approve_selected")
-def approve_selected(data: RowData):
-    print(data.mixedRow)
-    try:
-        mixed_row = data.mixedRow
-        if len(mixed_row) < 1:
-            raise HTTPException(status_code=400, detail="Please select atleast one row.")
-        else:
-            for row in mixed_row:
-                id = int(row.strip())
-                book = items(where=f"id ={id}")[0]
-                book.status = "approved"
-                items.update(book)
-        return {"message": f"Rows successfully approved"}
-    except Exception as e:
-        return JSONResponse(content={"message": f"Error approving rows: {str(e)}"}, status_code=500)
-
-@app.post("/move_selected")
-def move_selected(data: RowData):
-    print(data.mixedRow)
-    try:
-        mixed_row = data.mixedRow
-        if len(mixed_row) < 1:
-            raise HTTPException(status_code=400, detail="Please select atleast one row.")
-        else:
-            for row in mixed_row:
-                id = int(row.strip())
-                book = items(where=f"id ={id}")[0]
-                status = book.status
-                print(status)
-                if status == "approved":
-                    book.current_stage = 4
-                    book.date_stage_update = datetime.now()
-                    items.update(book)
-                elif status == "rejected":
-                    book.current_stage = 10
-                    book.date_stage_update = datetime.now()
-                    items.update(book)
-                else:
-                    return JSONResponse(content={"message": f"Update the status of {id} before moving."},status_code=400)
-        return {"message": f"Rows successfully moved"}
-    except Exception as e:
-        return JSONResponse(content={"message": f"Error moving rows: {str(e)}"}, status_code=500)
 
 # Initialize the server
 serve()

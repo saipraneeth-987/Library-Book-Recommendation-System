@@ -8,14 +8,82 @@ import re
 from datetime import datetime, timedelta
 import requests
 
-def update_stage(isbn: int, current_stage: int,new_stage: int):
+import re
+from google.oauth2.credentials import Credentials
+from google_auth_oauthlib.flow import InstalledAppFlow
+from googleapiclient.discovery import build
+import os
+import pickle
+from google.auth.transport.requests import Request
+
+SCOPES = ['https://www.googleapis.com/auth/gmail.readonly']
+
+def fetch_name_from_gmail(email):
+    """Fetch name associated with an email by searching Gmail."""
+    creds = None
+
+    # Load or authenticate credentials
+    if os.path.exists('token.pickle'):
+        with open('token.pickle', 'rb') as token:
+            creds = pickle.load(token)
+
+    if not creds or not creds.valid:
+        if creds and creds.expired and creds.refresh_token:
+            creds.refresh(Request())
+        else:
+            flow = InstalledAppFlow.from_client_secrets_file(
+                r'C:\Users\Lenovo\Downloads\credentials.json', SCOPES)
+            creds = flow.run_local_server(port=0)
+        with open('token.pickle', 'wb') as token:
+            pickle.dump(creds, token)
+
+    # Build Gmail service
+    service = build('gmail', 'v1', credentials=creds)
+
+    try:
+        # Query to include only received and sent emails (From and To)
+        query = f"from:{email} OR to:{email}"
+        results = service.users().messages().list(userId='me', q=query, maxResults=10).execute()
+
+        if 'messages' not in results or not results['messages']:
+            return f"No messages found for {email}"
+
+        # Track the name for exact match
+        name_found = None
+
+        # Loop through messages to fetch exact name(s)
+        for message in results['messages']:
+            msg = service.users().messages().get(userId='me', id=message['id']).execute()
+            headers = msg['payload']['headers']
+            for header in headers:
+                if header['name'] in ['From', 'To']:  # Only check From and To headers
+                    sender = header['value']
+                    match = re.match(r'(.*) <(.*)>', sender)
+                    if match:
+                        name, address = match.groups()
+                        # Match exact email and return the name associated with it
+                        if email.lower() == address.strip().lower():
+                            name_found = name.strip()  # Store the name and stop further iterations
+                            break
+            if name_found:
+                break  # Exit after finding the first match
+
+        if name_found:
+            return name_found
+        else:
+            return f"No name found for {email}"  # Return if no match is found
+
+    except Exception as e:
+        return f"An error occurred while fetching data for {email}: {e}"
+
+def update_stage(id: int, current_stage: int,new_stage: int):
     with sqlite3.connect('data/library.db') as connection:
         cursor = connection.cursor()
         current_time = datetime.now()
-        cursor.execute("SELECT id FROM items WHERE isbn = ? AND current_stage = ?", (isbn, current_stage))
+        cursor.execute("SELECT id FROM items WHERE id = ? AND current_stage = ?", (id, current_stage))
         book= cursor.fetchone()
         if book:
-            cursor.execute("UPDATE items SET current_stage = ?,date_stage_update = ? WHERE isbn = ? AND current_stage = ?",(new_stage,current_time, isbn, current_stage))
+            cursor.execute("UPDATE items SET current_stage = ?,date_stage_update = ? WHERE id = ? AND current_stage = ?",(new_stage,current_time, id, current_stage))
     
         connection.commit()
 
@@ -177,6 +245,11 @@ def is_valid_isbn(isbn: str) -> bool:
     return bool(re.match(r'^\d{10}$', isbn)) or bool(re.match(r'^\d{13}$', isbn))
 
 
+from datetime import datetime
+import sqlite3
+import csv
+from fastapi import UploadFile
+
 async def load(backup_file: UploadFile):
     contents = await backup_file.read()
     contents = contents.decode("utf-8")  # Decode the uploaded file's content
@@ -216,19 +289,19 @@ async def load(backup_file: UploadFile):
 
     insert_query = """
     INSERT OR IGNORE INTO items 
-    (isbn, recommender, email, number_of_copies, purpose, remarks, date, current_stage,clubbed,c_id) 
-    VALUES (?, ?, ?, ?, ?, ?, ?, 1,0,0)
+    (isbn, recommender, email, number_of_copies, purpose, remarks, date, current_stage, clubbed, c_id) 
+    VALUES (?, ?, ?, ?, ?, ?, ?, 1, 0, 0)
     """
 
     check_query = """
     SELECT COUNT(*) FROM items WHERE isbn = ? AND recommender = ? AND email = ? AND number_of_copies = ? AND purpose = ? AND remarks = ? AND date = ?
     """
+
     # Process each row in the CSV
     for row in csv_reader:
         try:
             # Extract necessary fields
             isbn = row[3]  # Assuming ISBN is at the correct column index
-            
             recommender = row[18]  # Assuming recommender is at the correct column index
             email = row[1]  # Assuming email is at the correct column index
             number_of_copies = int(row[5])  # Assuming number of copies is at the correct column index
@@ -236,14 +309,19 @@ async def load(backup_file: UploadFile):
             remarks = row[6]  # Assuming remarks is at the correct column index
             date = row[0]  # Assuming date is at the correct column index
 
+            # Handle empty date by setting the current datetime
+            if not date.strip():  # Check if date is empty or whitespace
+                date = datetime.now().strftime("%m.%d.%Y %H:%M:%S")  # Use current datetime
 
             # Check for duplicates
-            cursor.execute(check_query, (isbn, recommender,email,number_of_copies,purpose,remarks, date))
+            cursor.execute(check_query, (isbn, recommender, email, number_of_copies, purpose, remarks, date))
             count = cursor.fetchone()[0]
             if count > 0:
                 continue  # Skip if duplicate found
             if not is_valid_isbn(isbn):
                 continue
+
+            # Insert the data into the database
             cursor.execute(insert_query, (isbn, recommender, email, number_of_copies, purpose, remarks, date))
         except Exception as e:
             print(f"Error processing row {row}: {e}")

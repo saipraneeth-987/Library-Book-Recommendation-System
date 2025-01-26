@@ -5,13 +5,13 @@ def stage1():
     connection = sqlite3.connect('data/library.db')
     cursor = connection.cursor()
     cursor.execute("""
-        SELECT isbn, recommender, email, number_of_copies, purpose, remarks, date
+        SELECT isbn, recommender, email, number_of_copies, purpose, remarks, date,id
         FROM items
         WHERE current_stage = 1
         ORDER BY date DESC
     """)
     items = cursor.fetchall()
-    connection.close()
+    connection.close() 
 
     # Convert the date to proper datetime format and sort if necessary
     for idx, item in enumerate(items):

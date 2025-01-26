@@ -413,3 +413,26 @@ def download_search_data(search: str ):
         media_type="text/csv",
         headers={"Content-Disposition": "attachment; filename=Searched_books.csv"}
     )
+
+def download_stage12():
+    csv_file = StringIO()
+    writer = csv.writer(csv_file)
+
+    writer.writerow(["ID", "ISBN","modified_isbn", "Recommender", "Email", "Number of Copies","Title","Sub Title" ,"Purpose", "Remarks","publisher","edition/year","author","currency","cost in currency", "Date","Book availability"])
+
+    connection = sqlite3.connect('data/library.db')
+    cursor = connection.cursor()
+    cursor.execute("SELECT id,isbn,modified_isbn,recommender,email,number_of_copies,book_name,sub_title,purpose,remarks_stage2,publisher,edition_or_year,authors,currency,cost_currency,date,availability_stage2 FROM items WHERE current_stage = 12")
+    items = cursor.fetchall()
+
+    for item in items:
+        writer.writerow(item)
+
+    connection.close()
+    csv_file.seek(0)
+
+    return StreamingResponse(
+        csv_file,
+        media_type="text/csv",
+        headers={"Content-Disposition": "attachment; filename=books_processing.csv"}
+    )

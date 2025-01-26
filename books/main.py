@@ -795,25 +795,19 @@ async def club_rows(data: RowData):
                 c_id = cursor.fetchone()[0]
                 if c_id == 'None' or c_id == None:
                     c_id = 0
-                print(c_id)
                 c_id = int(c_id)
             for row in mixed_row:
-                print(row)
                 if "|" in row:
                     indices = row.split("|")
-                    print(indices)
                     for index in indices:
                         id = int(index.strip())
                         book = items(where=f"id ={id}")[0]
-                        print(book)
                         book.clubbed = True
                         book.c_id = c_id+1
                         items.update(book)
                 else:
                     id = int(row.strip())
-                    print(id)
                     book = items(where=f"id ={id}")[0]
-                    print(book)
                     book.clubbed = True
                     new_c_id = c_id+1
                     book.c_id = new_c_id
@@ -839,15 +833,12 @@ def remove_clubbed(id: int):
     book = items(where=f"id ={id}")[0]
     c_id = book.c_id
     same_cid_items = items(where=f"c_id ={c_id} and current_stage = 3")
-    #print(same_cid_items)
     if (len(same_cid_items) == 2):
         other_book = items(where=f"c_id ={c_id} and current_stage = 3 and id != {id}")[0]
-        #print(other_book)
         other_book.clubbed = False
         other_book.c_id = None
         items.update(other_book)
 
-    #print(book)
     book.clubbed = False
     book.c_id = None
     items.update(book)
@@ -875,6 +866,53 @@ def download_csv():
 def move_to_stage2_from_stage12(id: int):
     functions.update_stage(id,12,2)
     return RedirectResponse("/stage2", status_code=302)
+@app.post("/approve_selected")
+def approve_selected(data: RowData):
+    print(data.mixedRow)
+    try:
+        mixed_row = data.mixedRow
+        if len(mixed_row) < 1:
+            raise HTTPException(status_code=400, detail="Please select atleast one row.")
+        else:
+            for row in mixed_row:
+                id = int(row.strip())
+                book = items(where=f"id ={id}")[0]
+                book.status = "approved"
+                items.update(book)
+        return {"message": f"Rows successfully approved"}
+    except Exception as e:
+        return JSONResponse(content={"message": f"Error approving rows: {str(e)}"}, status_code=500)
+
+@app.post("/move_selected")
+def move_selected(data: RowData):
+    print(data.mixedRow)
+    try:
+        mixed_row = data.mixedRow
+        if len(mixed_row) < 1:
+            raise HTTPException(status_code=400, detail="Please select atleast one row.")
+        else:
+            for row in mixed_row:
+                id = int(row.strip())
+                book = items(where=f"id ={id}")[0]
+                status = book.status
+                print(status)
+                if status == "approved":
+                    book.current_stage = 4
+                    book.date_stage_update = datetime.now()
+                    items.update(book)
+                elif status == "rejected":
+                    book.current_stage = 10
+                    book.date_stage_update = datetime.now()
+                    items.update(book)
+                else:
+                    return JSONResponse(content={"message": f"Update the status of {id} before moving."},status_code=400)
+        return {"message": f"Rows successfully moved"}
+    except Exception as e:
+        return JSONResponse(content={"message": f"Error moving rows: {str(e)}"}, status_code=500)
+
+@app.get("/duplicateRecommendation")
+def initial_duplicates(page: int = 1, sort_by: str = "date", order: str = "desc", search: str= "", date_range: str = "all"):
+    return view.duplicateRecommendation(page,sort_by,order,search,date_range)
 
 # Initialize the server
 serve()

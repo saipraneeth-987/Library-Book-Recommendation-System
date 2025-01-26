@@ -175,6 +175,7 @@ def stage1(page: int = 1, sort_by: str = "date", order: str = "desc", search: st
     )
 
     card = Card(
+            A("Duplicate Recommendations", href="/duplicateRecommendation", role="button", style="margin-left: 10px; white-space: nowrap ; height:50px; font-weight: 700;"),
         H3("Stage 1 - Initiated phase"),
         Div(
             "In this stage we can upload the file and load the contents to the required columns. All are non-editable. "
@@ -798,7 +799,7 @@ def stage3(page: int = 1, sort_by: str = "date_stage_update", order: str = "asc"
         
         search_box,
         date_range_options,
-        Button("Club Rows", id="club-rows-button", style="margin-top: 10px; ",action ="/club-rows",method = "post"),
+        Button("Club Rows", id="club-rows-button", style="margin-top: 10px; margin-bottom: 10px;",action ="/club-rows",method = "post"),
         table,
         pagination_controls,
         header=Div(
@@ -2627,9 +2628,31 @@ async def edit_in_stage8(id: int):
     return res
 
 def clubbed(c_id):
+    header = (
+        A('Back', href='/stage3', role="button", style=" margin-bottom: 10px;"),
+        Button("Approved",id="approvedButton", style="margin-bottom: 10px; display: none; margin-left: 10px;",action="/approve_selected",method="post"),
+        Button("Move to next stage",id="moveToNextStageButton", style="margin-bottom: 10px; display: none; margin-left: 10px;",action="/move_selected",method="post"),
+
+    )
     items = fetch.clubbed(c_id)
     table = Table(
         Tr(
+            Th(
+            Input(
+                type="checkbox", 
+                name="select_all", 
+                style="margin: auto;", 
+                onclick="""
+                 const checkboxes = document.querySelectorAll('input[name="row_checkbox"]');
+                console.log('Found checkboxes:', checkboxes);
+                checkboxes.forEach(checkbox => checkbox.checked = this.checked);
+                updateSelectAllBoxandButtons();
+                """,
+            ),
+            "Select All",
+            style="font-weight: 1000;font-size: 13px; text-align: center;"
+            ),
+           # Th("Select", style="font-weight: 1000; text-align: center;"),
             Th("ID", style="font-weight: 1000; text-align: center;"),
             Th("ISBN", style=" align-items: center; font-weight: 1000;"),
             Th("Title", style="font-weight: 1000; text-align: center;"),
@@ -2649,6 +2672,11 @@ def clubbed(c_id):
         ),
         *[
             Tr(
+                Td(
+                    Input(type="checkbox", name="row_checkbox",
+                          value=item[0], style="margin: auto;", onchange="updateSelectAllBoxandButtons()"),
+                style="text-align: center; padding: 4px;"
+            ),
                 Td(item[0], style="font-size: smaller; padding: 4px;"),
                 Td(item[1], style="font-size: smaller; padding: 4px;"),
                 Td(item[2], style="font-size: smaller; padding: 4px;"),
@@ -2673,16 +2701,92 @@ def clubbed(c_id):
         )
             for item in items
         ],
-        id = "book-table",
+        id = "club-book-table",
         style="border-collapse: collapse; width: 100%;",
         **{"border": "1"}
     )
+    js = """
+        function updateSelectAllBoxandButtons() {
+                const checkboxes = document.querySelectorAll('input[name="row_checkbox"]');
+                console.log('Found checkboxes:', checkboxes);
+                const selectAllCheckbox = document.querySelector('input[name="select_all"]');
+                const allChecked = Array.from(checkboxes).every(checkbox => checkbox.checked);
+                console.log('All checked:', allChecked);
+                selectAllCheckbox.checked = allChecked;
+
+                const anySelected = Array.from(checkboxes).some(checkbox => checkbox.checked);
+                const approvedButton = document.getElementById('approvedButton');
+                approvedButton.style.display = anySelected ? 'inline-block' : 'none';
+                moveToNextStageButton.style.display = anySelected ? 'inline-block' : 'none';
+        }
+
+        document.getElementById('approvedButton').onclick = function () {
+        const selectedRows = Array.from(document.querySelectorAll('input[name="row_checkbox"]:checked')).map(cb => cb.value);
+        if (selectedRows.length > 0) {
+            fetch('http://localhost:5001/approve_selected', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ mixedRow: selectedRows })
+            })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    document.querySelectorAll('input[name="row_checkbox"]:checked').forEach(cb => cb.checked = false);
+                    const selectAllCheckbox = document.querySelector('input[name="select_all"]');
+                    if(selectAllCheckbox.checked){
+                        selectAllCheckbox.checked = false;
+                    }
+                    setTimeout(() => location.reload(), 100);
+                })
+                .catch(error => {
+                    alert( error.message);
+                });
+        } else {
+            alert('Select atleast one row to approve.');
+        }};
+
+    document.getElementById('moveToNextStageButton').onclick = function () {
+    const selectedRows = Array.from(document.querySelectorAll('input[name="row_checkbox"]:checked')).map(cb => cb.value);
+    if (selectedRows.length > 0) {
+        fetch('http://localhost:5001/move_selected', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ mixedRow: selectedRows })
+            })
+        .then(response => {
+            if (!response.ok) {
+                return response.json().then(errorData => {
+                    throw new Error(errorData.message || "Unknown error occurred");
+                    });
+                }
+            return response.json();
+            })
+        .then(data => {
+            document.querySelectorAll('input[name="row_checkbox"]:checked').forEach(cb => cb.checked = false);
+            const selectAllCheckbox = document.querySelector('input[name="select_all"]');
+            if(selectAllCheckbox.checked){
+                selectAllCheckbox.checked = false;
+                }
+            setTimeout(() => location.reload(), 100);
+            })
+        .catch(error => {
+            alert(error.message);
+            });
+        } else {
+            alert('Select atleast one row to move.');
+        }};
+"""
     card = Card(
             H3("Clubbed Books"),
+            header,
             table
             )
 
-    return (card)
+    return (card,Script(src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.1/fabric.min.js"),Script(js))
 
 def globalsearch(page: int = 1, sort_by: str = "date", order: str = "desc", search: str = search1, date_range: str = "all", items_per_page: int = 10):
     print(search)
@@ -2833,6 +2937,7 @@ def globalsearch(page: int = 1, sort_by: str = "date", order: str = "desc", sear
         ),
     )
     return Titled('Search Details', card)
+
 
 def stage12(page: int = 1, sort_by: str = "date", order: str = "desc", search: str= "", date_range: str = "all"):
     
@@ -3018,4 +3123,153 @@ def stage12(page: int = 1, sort_by: str = "date", order: str = "desc", search: s
             style="display: flex; gap: 10px;"  # Flexbox for layout
         )
     )
-    return Titled('Stage 2 - ISBN not found', card)
+    return Titled('Stage 12 - ISBN not found', card)
+
+def duplicateRecommendation(page: int = 1, sort_by: str = "date", order: str = "desc", search: str= "", date_range: str = "all"):
+    all_items = fetch.duplicateRecommendation()
+    all_items = functions.filter_by_date(all_items, date_range)
+    if sort_by in ["date", "email"]:
+        reverse = order == "desc"
+        column_index = {"date": 6, "email": 2}[sort_by]
+        all_items.sort(key=lambda x: x[column_index], reverse=reverse)
+    # Implement the search functionality
+    if search:
+        search_lower = search.lower()
+        all_items = [
+            item for item in all_items
+            if any(search_lower in str(value).lower() for value in item)
+        ]
+    # Total items and pagination
+    total_items = len(all_items)
+    total_pages = (total_items + items_per_page - 1) // items_per_page
+
+    # Pagination logic
+    start_index = (page - 1) * items_per_page
+    end_index = start_index + items_per_page
+    current_page_items = all_items[start_index:end_index]
+
+    visible_pages = 5
+    half_visible = visible_pages // 2
+    start_page = max(1, page - half_visible)
+    end_page = min(total_pages, page + half_visible)
+    if page <= half_visible:
+        end_page = min(total_pages, visible_pages)
+    if page > total_pages - half_visible:
+        start_page = max(1, total_pages - visible_pages + 1)
+
+    # Pagination controls
+    pagination_controls = Div(
+        *(
+            [
+                A("«", href=f"/duplicateRecommendation?page={page - 1}&sort_by={sort_by}&order={order}&search={search}&date_range={date_range}&items_per_page={items_per_page}",
+                  style="margin-right: 10px;font-size: x-large;" +
+                  ("visibility: hidden;" if page == 1 else "visibility: visible;")),
+            ]
+            + [
+                A(
+                    str(i),
+                    href=f"/duplicateRecommendation?page={i}&sort_by={sort_by}&order={order}&search={search}&date_range={date_range}&items_per_page={items_per_page}",
+                    style="margin-right: 10px; text-decoration: none; font-size: x-large; " +
+                    ("font-weight: bold;" if i == page else "font-weight: normal;")
+                )
+                for i in range(start_page, end_page + 1)
+            ]
+            + [
+                A("»", href=f"/duplicateRecommendation?page={page + 1}&sort_by={sort_by}&order={order}&search={search}&date_range={date_range}&items_per_page={items_per_page}",
+                  style="margin-left: 10px;font-size: x-large;" +
+                  ("visibility: hidden;" if page == total_pages else "visibility: visible;"))
+            ]
+        ),
+        style="margin-top: 10px; text-align: center;"
+    )
+    search_box = Form(
+        Group(
+            Input(type="text", name="search", value=search, placeholder="Search...", style="margin-right: 10px; padding: 5px;"),
+            Input(type="hidden", name="date_range", value=date_range),
+            Button("Search", type="submit", style="font-weight: 600;"),
+            style="display: flex; align-items: center;"
+        ),
+        action="/duplicateRecommendation", method="get"
+    )
+
+    def get_sort_icon(column):
+        if sort_by == column:
+            return "▲" if order == "asc" else "▼"
+        return "⇅"
+    def create_sort_link(column):
+        new_order = "asc" if sort_by == column and order == "desc" else "desc"
+        return A(
+            get_sort_icon(column),
+            href=f"/duplicateRecommendation?page={page}&sort_by={column}&order={new_order}&search={search}&date_range={date_range}&items_per_page={items_per_page}",
+            style="text-decoration: none; font-size: small; margin-left: 5px;"
+        )
+
+    date_range_options = Form(
+        Group(
+            Input(type="hidden", name="search", value=search),
+            Input(type="radio", name="date_range", value="all", id="all", checked=(date_range == "all"),onchange="this.form.submit()"),
+            Label("All", for_="all", style="margin-right: 10px;"),
+            Input(type="radio", name="date_range", value="1month", id="1month", checked=(date_range == "1month"),onchange="this.form.submit()"),
+            Label("Last 1 Month", for_="1month", style="margin-right: 10px;"),
+            Input(type="radio", name="date_range", value="3months", id="3months", checked=(date_range == "3months"),onchange="this.form.submit()"),
+            Label("Last 3 Months", for_="3months", style="margin-right: 10px;"),
+            Input(type="radio", name="date_range", value="6months", id="6months", checked=(date_range == "6months"),onchange="this.form.submit()"),
+            Label("Last 6 Months", for_="6months"),
+            style="margin-bottom: 20px; display: flex; align-items: center;"
+        ),
+        action="/duplicateRecommendation", method="get"
+    )
+
+    table = Table(
+        Tr(
+            Th(Div("Date", create_sort_link("date"), style="""display: inline-flex; align-items: center; font-weight: 1000; text-align: center; justify-content: center;width: 100%; height: 100%;""")),
+            Th("ISBN", style="font-weight: 1000; text-align: center;"),
+            Th("Recommender", style="font-weight: 1000; text-align: center;"),
+            Th(Div("Email", create_sort_link("email"), style="""display: inline-flex; align-items: center; font-weight: 1000; text-align: center; justify-content: center;width: 100%; height: 100%;""")),
+            Th("Number of Copies", style="font-weight: 1000; text-align: center;"),
+            Th("Purpose", style="font-weight: 1000; text-align: center;"),
+            Th("Remarks", style="font-weight: 1000; text-align: center;"),
+            Th("Action", style=" font-weight: 1000;width: 110px; text-align: center;"),
+        ),
+        *[
+            Tr(
+                Td(item[6], style="font-size: smaller; padding: 4px;"),
+                Td(item[0], style="font-size: smaller; padding: 4px;"),
+                Td(item[1], style="font-size: smaller; padding: 4px;"),
+                Td(item[2], style="font-size: smaller; padding: 4px;"),
+                Td(item[3], style="font-size: smaller; padding: 4px;"),
+                Td(item[4], style="font-size: smaller; padding: 4px;"),
+                Td(item[5], style="font-size: smaller; padding: 4px; maxwidth: 500px"),
+                Td(A("Move to next Stage ", href=f"/move_to_stage2_from_stage1/{item[0]}", style="display:block;font-size: smaller; padding: 4px; width: 110px"))
+            )
+            for item in current_page_items
+        ],
+        style="border-collapse: collapse; width: 100%;",
+        **{"border": "1"}
+    )
+
+    card = Card(
+        search_box,
+        date_range_options,
+        table,
+        pagination_controls,  # Display pagination controls
+        header=Div(
+            #A("Globalsearch", href="/search", role="button", style="margin-left: 10px; white-space: nowrap ; height:50px; font-weight: 700;"),
+            A("Initiated", href="/", role="button", style="margin-left: 10px; white-space: nowrap ; height:50px; font-weight: 700;"),
+            A("Processing", href="/stage2", role="button", style="margin-left: 10px; white-space: nowrap ; height:50px; font-weight: 700;"),
+            A("Approval Pending", href="/stage3", role="button", style="margin-left: 10px; white-space: nowrap ; height:50px; font-weight: 700;"),
+            A("Approved", href="/stage4", role="button", style="margin-left: 10px; white-space: nowrap ; height:50px; font-weight: 700;"),
+            A("Under enquiry", href="/stage5", role="button", style="margin-left: 10px; white-space: nowrap ; height:50px; font-weight: 700;"),
+            A("Ordered", href="/stage6", role="button", style="margin-left: 10px; white-space: nowrap ; height:50px; font-weight: 700;"),
+            A("Received", href="/stage7", role="button", style="margin-left: 10px; white-space: nowrap ; height:50px; font-weight: 700;"),
+            A("Processed", href="/stage8", role="button", style="margin-left: 10px; white-space: nowrap ; height:50px; font-weight: 700;"),
+            A("Duplicates", href="/duplicate", role="button", style="margin-left: 10px; white-space: nowrap ; height:50px; font-weight: 700;"),
+            A("Not Approved", href="/notapproved", role="button", style="margin-left: 10px; white-space: nowrap ; height:50px; font-weight: 700;"),
+            A("Not Available", href="/stage11", role="button", style="margin-left: 10px; white-space: nowrap ; height:50px; font-weight: 700;"),
+            A("Download All", href="/downloadentire", role="button", style="margin-left: 10px; white-space: nowrap ; height:50px; font-weight: 700;"),
+            A("Download Initiated books", href="/downloadstage1", role="button", style="margin-left: 10px; white-space: nowrap ; height:50px; font-weight: 700;"),
+            style="display: flex; align-items: center; justify-content: flex-start; padding: 20px; height: 50px; font-weight: 700;"
+        ),
+    )
+    return Titled('Duplicate Book Recommendations', card)
+

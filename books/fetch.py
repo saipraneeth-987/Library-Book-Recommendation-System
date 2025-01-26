@@ -331,3 +331,30 @@ def stage12():
 
     return items
 
+def duplicateRecommendation():
+    connection = sqlite3.connect('data/library.db')
+    cursor = connection.cursor()
+    cursor.execute("""
+        SELECT isbn, recommender, email, number_of_copies, purpose, remarks, date
+        FROM items
+        WHERE current_stage = 13
+        ORDER BY date DESC
+    """)
+    items = cursor.fetchall()
+    connection.close()
+
+    # Convert the date to proper datetime format and sort if necessary
+    for idx, item in enumerate(items):
+        date_str = item[6]  # The date is at index 6 in the tuple
+        try:
+            # If the date is not in ISO format, parse it and convert it to ISO format
+            parsed_date = datetime.strptime(date_str, "%m.%d.%Y %H:%M:%S")
+            items[idx] = item[:6] + (parsed_date.strftime("%Y-%m-%d %H:%M:%S"),) + item[7:]
+        except ValueError:
+            # Handle invalid date format if needed
+            print(f"Invalid date format for {date_str} at index {idx}")
+
+    # Sort by date in descending order after conversion
+    items.sort(key=lambda x: x[6], reverse=True)
+
+    return items

@@ -125,7 +125,7 @@ def move_to_stage3_from_stage2(id: int):
     cursor = connection.cursor()
 
     cursor.execute("""
-        SELECT number_of_copies, book_name, publisher, edition_or_year, authors, currency, cost_currency,availability_stage2
+        SELECT recommender,number_of_copies, book_name, publisher, edition_or_year, authors, currency, cost_currency,availability_stage2
         FROM items
         WHERE id = ? AND current_stage = 2
     """, (id,))
@@ -136,8 +136,10 @@ def move_to_stage3_from_stage2(id: int):
     if result:
         # Check for missing mandatory fields
         missing_fields = []
-        number_of_copies, book_name, publisher, edition_or_year, authors, currency, cost_currency,availability_stage2 = result
+        recommender,number_of_copies, book_name, publisher, edition_or_year, authors, currency, cost_currency,availability_stage2 = result
         
+        if not recommender:
+            missing_fields.append("Recommender")
         if not number_of_copies:
             missing_fields.append("Number of copies")
         if not book_name:
@@ -152,6 +154,8 @@ def move_to_stage3_from_stage2(id: int):
             missing_fields.append("Currency")
         if not cost_currency:
             missing_fields.append("Cost (in currency)")
+        if not availability_stage2:
+            missing_fields.append("Availability")
 
         # If there are missing fields, return an error message
         if missing_fields:
@@ -189,7 +193,8 @@ async def edit_book(id: int):
 
 @app.post("/update-bookstage2")
 def update_bookstage2(
-    isbn: int, 
+    isbn: int,
+    recommender:str, 
     modified_isbn: int,
     number_of_copies: int,
     book_name: str, 
@@ -206,6 +211,8 @@ def update_bookstage2(
     
     # Check for missing mandatory fields
     missing_fields = []
+    if not recommender:
+        missing_fields.append("Recommender")
     if not number_of_copies:
         missing_fields.append("Number of copies")
     if not book_name:
@@ -237,6 +244,7 @@ def update_bookstage2(
             UPDATE items
             SET 
                 modified_isbn = ?, 
+                recommender = ?,
                 number_of_copies =?,
                 book_name = ?, 
                 sub_title =?,
@@ -250,7 +258,7 @@ def update_bookstage2(
             WHERE 
                 isbn = ? AND 
                 current_stage = 2
-        """, (modified_isbn, number_of_copies, book_name, sub_title, remarks_stage2, 
+        """, (modified_isbn,recommender, number_of_copies, book_name, sub_title, remarks_stage2, 
               publisher, edition_or_year, authors, currency, cost_currency, availability_stage2, isbn))
         connection.commit()
         if cursor.rowcount == 0:
@@ -294,7 +302,12 @@ def move_to_stage4_from_stage3(id: int):
         connection.close()
 
     if result:
+        missing_fields = []
         status = result[0]  # Extract the status from the query result
+        if not status:
+            missing_fields.append("Status")
+        if missing_fields:
+            return {"error": f"The following fields are mandatory and must be filled: {', '.join(missing_fields)}"}
 
         # Handle status-based transitions
         if status == "approved":
@@ -327,7 +340,12 @@ def update_bookstage3(isbn: int,
                       status: str,
                       approval_remarks: str
                       ):
-    
+    missing_fields = []
+    if not status:
+        missing_fields.append("Status")
+    if missing_fields:
+        return {"error": f"The following fields are mandatory and must be filled: {', '.join(missing_fields)}"}
+
     connection = sqlite3.connect('data/library.db')
     cursor = connection.cursor()
 
@@ -362,10 +380,10 @@ def duplicate(page: int = 1, sort_by: str = "date_stage_update", order: str = "d
 def download_csv():
     return download.download_duplicate()
 
-@app.get("/move_to_stage1_from_duplicate/{id}")
-def move_to_stage1_from_duplicate(id: int):
-    functions.update_stage(id,9,1)
-    return RedirectResponse("/", status_code=302)
+@app.get("/move_to_stage2_from_duplicate/{id}")
+def move_to_stage2_from_duplicate(id: int):
+    functions.update_stage(id,9,2)
+    return RedirectResponse("/stage2", status_code=302)
 
 @app.get("/stage4")
 def stage4(page: int = 1, sort_by: str = "date_stage_update", order: str = "desc", search: str= "", date_range: str = "all"):
@@ -429,6 +447,11 @@ def move_to_stage6_from_stage5(id: int):
 
     if result:
         Availability = result[0].strip()  # Extract the status from the query result
+        missing_fields =[]
+        if not Availability:
+            missing_fields.append("Availability")
+        if missing_fields:
+            return {"error": f"The following fields are mandatory and must be filled: {', '.join(missing_fields)}"}
 
         # Handle status-based transitions
         if Availability == "Available":
@@ -461,6 +484,15 @@ def update_bookstage5(isbn: int,
                       supplier_info:str,
                       remarks_stage5: str,
                       ):
+    
+    missing_fields = []
+    if not availability_stage5:
+        missing_fields.append("Availability")
+    if not supplier_info:
+        missing_fields.append("Supplier Information")
+    if missing_fields:
+        return {"error": f"The following fields are mandatory and must be filled: {', '.join(missing_fields)}"}
+
     connection = sqlite3.connect('data/library.db')
     cursor = connection.cursor()
     try:
@@ -830,6 +862,19 @@ def globalsearch(page: int = 1, sort_by: str = "date_stage_update", order: str =
 @app.get("/downloadsearch/{search}")
 def download_csv(search: str):
     return download.download_search_data(search)
+
+@app.get("/stage12")
+def stage12(page: int = 1, sort_by: str = "date_stage_update", order: str = "desc", search: str= "", date_range: str = "all"):
+    return view.stage12(page,sort_by,order,search,date_range)
+
+@app.get("/downloadstage12")
+def download_csv():
+    return download.download_stage12()
+
+@app.get("/move_to_stage2_from_stage12/{id}")
+def move_to_stage2_from_stage12(id: int):
+    functions.update_stage(id,12,2)
+    return RedirectResponse("/stage2", status_code=302)
 
 # Initialize the server
 serve()

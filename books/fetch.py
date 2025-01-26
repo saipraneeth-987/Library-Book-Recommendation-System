@@ -307,4 +307,27 @@ def searched_items(search):
         ]
     return all_items
 
+def stage12():
+    connection = sqlite3.connect('data/library.db')
+    cursor = connection.cursor()
+    cursor.execute("""
+        SELECT id,isbn, modified_isbn,recommender,email,number_of_copies,book_name,sub_title,purpose,remarks_stage2,publisher,edition_or_year,authors,currency,cost_currency,date,availability_stage2
+        FROM items
+        WHERE current_stage = 12
+        ORDER BY date DESC
+    """)
+    items = cursor.fetchall()
+    connection.close()
+
+    for idx, item in enumerate(items):
+        date_str = item[15]  # The date is at index 6 in the tuple
+        try:
+            parsed_date = datetime.strptime(date_str, "%m.%d.%Y %H:%M:%S")
+            items[idx] = item[:15] + (parsed_date.strftime("%Y-%m-%d %H:%M:%S"),) + item[16:]
+        except ValueError:
+            print(f"Invalid date format for {date_str} at index {idx}")
+
+    items.sort(key=lambda x: x[15], reverse=True)
+
+    return items
 

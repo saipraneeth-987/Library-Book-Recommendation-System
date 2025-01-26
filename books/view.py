@@ -8,6 +8,7 @@ items_per_page: int = 10
 search1:str=""
 
 def stage1(page: int = 1, sort_by: str = "date", order: str = "desc", search: str = "", date_range: str = "all", items_per_page: int = 10):
+
     # Fetch items and apply filters
     all_items = fetch.stage1()
     all_items = functions.filter_by_date(all_items, date_range)
@@ -175,9 +176,13 @@ def stage1(page: int = 1, sort_by: str = "date", order: str = "desc", search: st
 
     card = Card(
         H3("Stage 1 - Initiated phase"),
-        H6("This displays the details collected from googleform responses. It displays the order such that the latest book request on the top."),
-        H6("Each book request is currently restored from Google Sheets CSV file. Initially, upload the CSV Google Sheet file and restore the details."),
-        H6("Clicking 'Move to Stage 2' button sends the book request details to stage 2 from stage 1."),
+        Div(
+            "In this stage we can upload the file and load the contents to the required columns. All are non-editable. "
+            "Sorting based on order can be done on the date and the email columns. "
+            "Navigating to different stages can be done by the above buttons. "
+            "Global search will give the details on which stage the current book is in and search will work for searching in the current stage.",
+            style="white-space: pre-line; font-size: 16px; margin-bottom: 10px;"
+        ),
         search_box,
         date_range_options,
         items_per_page_buttons,  # Display the items per page buttons
@@ -195,6 +200,7 @@ def stage1(page: int = 1, sort_by: str = "date", order: str = "desc", search: st
             A("Duplicates", href="/duplicate", role="button", style="margin-left: 10px; white-space: nowrap ; height:50px; font-weight: 700;"),
             A("Not Approved", href="/notapproved", role="button", style="margin-left: 10px; white-space: nowrap ; height:50px; font-weight: 700;"),
             A("Not Available", href="/stage11", role="button", style="margin-left: 10px; white-space: nowrap ; height:50px; font-weight: 700;"),
+            A("Books not found", href="/stage12", role="button", style="margin-left: 10px; white-space: nowrap ; height:50px; font-weight: 700;"),
             A("Download All", href="/downloadentire", role="button", style="margin-left: 10px; white-space: nowrap ; height:50px; font-weight: 700;"),
             A("Download Initiated books", href="/downloadstage1", role="button", style="margin-left: 10px; white-space: nowrap ; height:50px; font-weight: 700;"),
             restore_form,
@@ -362,8 +368,17 @@ def stage2(page: int = 1, sort_by: str = "date", order: str = "desc", search: st
     # Card for displaying the book list in stage 2
     card = Card(
         H3("Books Processing"),  # Title for the list of books in stage 2
-        H6("In this can edit the book details like the modified isbn and other . This can be done by collecting those details from the amazon,google etc "),
-        H6("ISBN,Recommender,email,date all these are not editable and remaining are editable."),
+        Div(
+            "Here it will show the details of the books that are moved from Stage 1. "
+            "After clicking edit and adding all the required columns which are marked as (*). "
+            "After clicking edit, it will automatically fetch the name, book title, publisher, and author from various APIs. "
+            "Along with that, it will fetch the name of the recommender too from the Gmail API, but only if the name is present in received or sent mails. "
+            "If availability is 'yes,' it means the book is already in the library, and if 'Move to Next Stage' is done, it will go to the Duplicates section. "
+            "If availability is 'no,' the book will proceed through the further stages if moved to the next stage. "
+            "If the provided ISBN is wrong, availability can be marked as 'book not found,' which will be sent to the ISBN error state when 'Move to Next Stage' is clicked. "
+            "However, previous columns can be marked as random to enable the move.",
+            style="white-space: pre-line; font-size: 16px; margin-bottom: 10px;"
+        ),
         search_box,
         date_range_options,
         table,  # Display the table
@@ -379,6 +394,7 @@ def stage2(page: int = 1, sort_by: str = "date", order: str = "desc", search: st
             A("Duplicates", href="/duplicate", role="button", style="margin-left: 10px; white-space: nowrap ; height:50px; font-weight: 700;"),
             A("Not Approved", href="/notapproved", role="button", style="margin-left: 10px; white-space: nowrap ; height:50px; font-weight: 700;"),
             A("Not Available", href="/stage11", role="button", style="margin-left: 10px; white-space: nowrap ; height:50px; font-weight: 700;"),
+            A("Books not found", href="/stage12", role="button", style="margin-left: 10px; white-space: nowrap ; height:50px; font-weight: 700;"),
             A("Download All", href="/downloadentire", role="button", style="margin-left: 10px; white-space: nowrap ; height:50px; font-weight: 700;"),
             A("Download Stage2", href="/downloadstage2", role="button", style="margin-left: 10px; white-space: nowrap ; height:50px; font-weight: 700;"),
             global_search_box,
@@ -407,7 +423,7 @@ async def edit_in_stage2(id: int):
 
         # Name of recommender (non-editable)
         Group(
-            H6("Recommender", style="margin-right: 10px; min-width: 60px; text-align: left;color: #53B6AC;"),
+            H6("Recommender(*)", style="margin-right: 10px; min-width: 60px; text-align: left;color: #53B6AC;"),
             Input(id="recommender", style ="border:1.3px solid #53B6AC;"),  # Fetch recommender from stored data
             style="display: flex; align-items: center; gap: 10px;"
         ),
@@ -418,7 +434,7 @@ async def edit_in_stage2(id: int):
         ),
         # Number of copies (editable)
         Group(
-            H6("Number of copies", style="margin-right: 10px; color: #D369A3; min-width: 60px; text-align: left;"),
+            H6("Number of copies(*)", style="margin-right: 10px; color: #D369A3; min-width: 60px; text-align: left;"),
             Input(id="number_of_copies", type="number", style ="border:1.3px solid #D369A3;"),
             style="display: flex; align-items: center; gap: 10px;"
         ),
@@ -495,7 +511,7 @@ async def edit_in_stage2(id: int):
         
         # Total cost (editable and auto-calculated)
         Group(
-            H6("Book Availability", style="margin-right: 10px; min-width: 60px; text-align: left;color: #D369A3; "),
+            H6("Book Availability(*)", style="margin-right: 10px; min-width: 60px; text-align: left;color: #D369A3; "),
             Select(
                 Option("Select Availability", value="", disabled=True, selected=True),
                 Option("Yes", value="Yes"),
@@ -779,7 +795,7 @@ def stage3(page: int = 1, sort_by: str = "date_stage_update", order: str = "asc"
 
     card = Card(
         H3("Stage 3"),
-        H6("This displays the details for Stage 3, including editable fields like cost, currency, and remarks."),
+        
         search_box,
         date_range_options,
         Button("Club Rows", id="club-rows-button", style="margin-top: 10px; ",action ="/club-rows",method = "post"),
@@ -796,6 +812,7 @@ def stage3(page: int = 1, sort_by: str = "date_stage_update", order: str = "asc"
             A("Duplicates", href="/duplicate", role="button", style="margin-left: 10px; white-space: nowrap ; height:50px; font-weight: 700;"),
             A("Not Approved", href="/notapproved", role="button", style="margin-left: 10px; white-space: nowrap ; height:50px; font-weight: 700;"),
             A("Not Available", href="/stage11", role="button", style="margin-left: 10px; white-space: nowrap ; height:50px; font-weight: 700;"),
+            A("Books not found", href="/stage12", role="button", style="margin-left: 10px; white-space: nowrap ; height:50px; font-weight: 700;"),
             A("Download All", href="/downloadentire", role="button", style="margin-left: 10px; white-space: nowrap ; height:50px; font-weight: 700;"),
             A("Download approval pending books", href="/downloadstage3", role="button", style="margin-left: 10px; white-space: nowrap ; height:50px; font-weight: 700;"),
             global_search_box,
@@ -848,7 +865,7 @@ async def edit_in_stage3(id: int):
         ),
         
         Group(
-            H6("Status", style="margin-right: 10px; min-width: 60px; color: #D369A3; text-align: left;"),
+            H6("Status(*)", style="margin-right: 10px; min-width: 60px; color: #D369A3; text-align: left;"),
             Select(
                 Option("Select Status", value="", disabled=True, selected=True),
                 Option("Approved", value="approved"),
@@ -1026,6 +1043,11 @@ def duplicate(page: int = 1, sort_by: str = "date", order: str = "desc", search:
     # Card for displaying the book list in stage 2
     card = Card(
         H3("Duplicate Books "),  # Title for the list of books in stage 2
+        Div(
+            "It displays the details about books that are already available in the library and are requested again. "
+            "If it is moved to this stage by mistake, it can be retrieved to the previous stage by moving to the previous stage.",
+            style="white-space: pre-line; font-size: 16px; margin-bottom: 10px;"
+        ),
         search_box,
         date_range_options,
         table,  # Display the table
@@ -1041,6 +1063,7 @@ def duplicate(page: int = 1, sort_by: str = "date", order: str = "desc", search:
             A("Processed", href="/stage8", role="button", style="margin-left: 10px; white-space: nowrap ; height:50px; font-weight: 700;"),
             A("Not Approved", href="/notapproved", role="button", style="margin-left: 10px; white-space: nowrap ; height:50px; font-weight: 700;"),
             A("Not Available", href="/stage11", role="button", style="margin-left: 10px; white-space: nowrap ; height:50px; font-weight: 700;"),
+            A("Books not found", href="/stage12", role="button", style="margin-left: 10px; white-space: nowrap ; height:50px; font-weight: 700;"),
             A("Download All", href="/downloadentire", role="button", style="margin-left: 10px; white-space: nowrap ; height:50px; font-weight: 700;"),
             A("Download duplicates", href="/downloadduplicate", role="button", style="margin-left: 10px; white-space: nowrap ; height:50px; font-weight: 700;"),
             global_search_box,
@@ -1203,7 +1226,12 @@ def stage4(page: int = 1, sort_by: str = "date_stage_update", order: str = "asc"
 
     card = Card(
         H3("Books Approved"),
-        # H6("This displays the details for Stage 3, including editable fields like cost, currency, and remarks."),
+        Div(
+            "The books that are approved from Dean Academics will be shown here. "
+            "The details will be similar to the previous stage. "
+            "Here it is used to verify that all the details are correct, and then the book can be moved to the next stage.",
+            style="white-space: pre-line; font-size: 16px; margin-bottom: 10px;"
+        ),
         search_box,
         date_range_options,
         table,
@@ -1219,6 +1247,7 @@ def stage4(page: int = 1, sort_by: str = "date_stage_update", order: str = "asc"
             A("Duplicates", href="/duplicate", role="button", style="margin-left: 10px; white-space: nowrap ; height:50px; font-weight: 700;"),
             A("Not Approved", href="/notapproved", role="button", style="margin-left: 10px; white-space: nowrap ; height:50px; font-weight: 700;"),
             A("Not Available", href="/stage11", role="button", style="margin-left: 10px; white-space: nowrap ; height:50px; font-weight: 700;"),
+            A("Books not found", href="/stage12", role="button", style="margin-left: 10px; white-space: nowrap ; height:50px; font-weight: 700;"),
             A("Download All", href="/downloadentire", role="button", style="margin-left: 10px; white-space: nowrap ; height:50px; font-weight: 700;"),
             A("Download Approved books", href="/downloadstage4", role="button", style="margin-left: 10px; white-space: nowrap ; height:50px; font-weight: 700;"),
             global_search_box,
@@ -1380,7 +1409,11 @@ def notapproved(page: int = 1, sort_by: str = "date_stage_update", order: str = 
 
     card = Card(
         H3("Books not  Approved"),
-        # H6("This displays the details for Stage 3, including editable fields like cost, currency, and remarks."),
+        Div(
+            "It displays all the information about books that are rejected or not approved by Dean Academics. "
+            "If it is moved to this stage by mistake, it can be retrieved to the previous stage by moving to the previous stage.",
+            style="white-space: pre-line; font-size: 16px; margin-bottom: 10px;"
+        ),
         search_box,
         date_range_options,
         table,
@@ -1396,6 +1429,7 @@ def notapproved(page: int = 1, sort_by: str = "date_stage_update", order: str = 
             A("Processed", href="/stage8", role="button", style="margin-left: 10px; white-space: nowrap ; height:50px; font-weight: 700;"),
             A("Duplicates", href="/duplicate", role="button", style="margin-left: 10px; white-space: nowrap ; height:50px; font-weight: 700;"),
             A("Not Available", href="/stage11", role="button", style="margin-left: 10px; white-space: nowrap ; height:50px; font-weight: 700;"),
+            A("Books not found", href="/stage12", role="button", style="margin-left: 10px; white-space: nowrap ; height:50px; font-weight: 700;"),
             A("Download All", href="/downloadentire", role="button", style="margin-left: 10px; white-space: nowrap ; height:50px; font-weight: 700;"),
             A("Download Approved books", href="/downloadnotapproved", role="button", style="margin-left: 10px; white-space: nowrap ; height:50px; font-weight: 700;"),
             global_search_box,
@@ -1565,7 +1599,13 @@ def stage5(page: int = 1, sort_by: str = "date_stage_update", order: str = "asc"
 
     card = Card(
         H3("Books Under Enquiry"),
-        # H6("This displays the details for Stage 3, including editable fields like cost, currency, and remarks."),
+        Div(
+            "After the book is approved, this stage means the books are under enquiry about the seller information. "
+            "Here, the 'availability' column means whether the book is available in the market or not. "
+            "Supplier information needs to be added here, which is mandatory, and any remarks can also be added but are not mandatory. "
+            "If the book is available, it will move to the next stage; otherwise, it will go to the 'Not Available' stage upon clicking 'Move to Next Stage.'",
+            style="white-space: pre-line; font-size: 16px; margin-bottom: 10px;"
+        ),
         search_box,
         date_range_options,
         table,
@@ -1581,6 +1621,7 @@ def stage5(page: int = 1, sort_by: str = "date_stage_update", order: str = "asc"
             A("Duplicates", href="/duplicate", role="button", style="margin-left: 10px; white-space: nowrap ; height:50px; font-weight: 700;"),
             A("Not Approved", href="/notapproved", role="button", style="margin-left: 10px; white-space: nowrap ; height:50px; font-weight: 700;"),
             A("Not Available", href="/stage11", role="button", style="margin-left: 10px; white-space: nowrap ; height:50px; font-weight: 700;"),
+            A("Books not found", href="/stage12", role="button", style="margin-left: 10px; white-space: nowrap ; height:50px; font-weight: 700;"),
             A("Download All", href="/downloadentire", role="button", style="margin-left: 10px; white-space: nowrap ; height:50px; font-weight: 700;"),
             A("Download books here", href="/downloadstage5", role="button", style="margin-left: 10px; white-space: nowrap ; height:50px; font-weight: 700;"),
             global_search_box,
@@ -1602,7 +1643,7 @@ async def edit_in_stage5(id: int):
         ),
         
         Group(
-            H6("Book Available", style="margin-right: 10px; min-width: 60px; color: #D369A3; text-align: left;"),
+            H6("Book Available(*)", style="margin-right: 10px; min-width: 60px; color: #D369A3; text-align: left;"),
             Select(
                 Option("Select Availability", value="", disabled=True, selected=True),
                 Option("Available", value="Available"),
@@ -1788,7 +1829,11 @@ def stage11(page: int = 1, sort_by: str = "date_stage_update", order: str = "asc
 
     card = Card(
         H3("Books not Available after Enquiry"),
-        # H6("This displays the details for Stage 3, including editable fields like cost, currency, and remarks."),
+        Div(
+            "It displays the books that were not available in the market at that time for ordering. "
+            "When the book becomes available, it can be retrieved to the previous stage by clicking 'Move to Previous Stage' and proceeding with the further process.",
+            style="white-space: pre-line; font-size: 16px; margin-bottom: 10px;"
+        ),
         search_box,
         date_range_options,
         table,
@@ -1804,6 +1849,7 @@ def stage11(page: int = 1, sort_by: str = "date_stage_update", order: str = "asc
             A("Processed", href="/stage8", role="button", style="margin-left: 10px; white-space: nowrap ; height:50px; font-weight: 700;"),
             A("Duplicates", href="/duplicate", role="button", style="margin-left: 10px; white-space: nowrap ; height:50px; font-weight: 700;"),
             A("Not Approved", href="/notapproved", role="button", style="margin-left: 10px; white-space: nowrap ; height:50px; font-weight: 700;"),
+            A("Books not found", href="/stage12", role="button", style="margin-left: 10px; white-space: nowrap ; height:50px; font-weight: 700;"),
             A("Download All", href="/downloadentire", role="button", style="margin-left: 10px; white-space: nowrap ; height:50px; font-weight: 700;"),
             A("Download books here", href="/downloadstage11", role="button", style="margin-left: 10px; white-space: nowrap ; height:50px; font-weight: 700;"),
             global_search_box,
@@ -1975,7 +2021,13 @@ def stage6(page: int = 1, sort_by: str = "date_stage_update", order: str = "asc"
 
     card = Card(
         H3("Books  Ordered"),
-        # H6("This displays the details for Stage 3, including editable fields like cost, currency, and remarks."),
+        Div(
+            "Here it displays the details of the books that are ordered but have not yet arrived at the library. "
+            "All the details from the previous stage will display here. "
+            "If any additional remarks need to be added, they can be added here. "
+            "If the book is received at the library, it can be moved to the next stage by clicking 'Move to Next Stage.'",
+            style="white-space: pre-line; font-size: 16px; margin-bottom: 10px;"
+        ),
         search_box,
         date_range_options,
         table,
@@ -1991,6 +2043,7 @@ def stage6(page: int = 1, sort_by: str = "date_stage_update", order: str = "asc"
             A("Duplicates", href="/duplicate", role="button", style="margin-left: 10px; white-space: nowrap ; height:50px; font-weight: 700;"),
             A("Not Approved", href="/notapproved", role="button", style="margin-left: 10px; white-space: nowrap ; height:50px; font-weight: 700;"),
             A("Not Available", href="/stage11", role="button", style="margin-left: 10px; white-space: nowrap ; height:50px; font-weight: 700;"),
+            A("Books not found", href="/stage12", role="button", style="margin-left: 10px; white-space: nowrap ; height:50px; font-weight: 700;"),
             A("Download All", href="/downloadentire", role="button", style="margin-left: 10px; white-space: nowrap ; height:50px; font-weight: 700;"),
             A("Download books here", href="/downloadstage6", role="button", style="margin-left: 10px; white-space: nowrap ; height:50px; font-weight: 700;"),
             global_search_box,
@@ -2049,7 +2102,7 @@ async def edit_in_stage6(id: int):
 
         # Number of copies (editable)
         Group(
-            H6("Number of copies", style="margin-right: 10px; color: #D369A3; min-width: 60px; text-align: left;"),
+            H6("Number of copies(*)", style="margin-right: 10px; color: #D369A3; min-width: 60px; text-align: left;"),
             Input(id="number_of_copies", type="number", style ="border:1.3px solid #D369A3;"),
             style="display: flex; align-items: center; gap: 10px;"
         ),
@@ -2085,7 +2138,7 @@ async def edit_in_stage6(id: int):
         
         # Total cost (editable and auto-calculated)
         Group(
-            H6("Book Availability", style="margin-right: 10px; min-width: 60px; text-align: left;color: #D369A3; "),
+            H6("Book Availability(*)", style="margin-right: 10px; min-width: 60px; text-align: left;color: #D369A3; "),
             Select(
                 Option("Select Availability", value="", disabled=True, selected=True),
                 Option("Available", value="Available"),
@@ -2292,7 +2345,13 @@ def stage7(page: int = 1, sort_by: str = "date_stage_update", order: str = "asc"
 
     card = Card(
         H3("Books  Ordered"),
-        # H6("This displays the details for Stage 3, including editable fields like cost, currency, and remarks."),
+        Div(
+            "The books here have arrived at the library and are ready for circulation. "
+            "All the details from the previous stage will display here. "
+            "If any additional remarks need to be added, they can be added here. "
+            "If the circulation is done, the book can be moved to the next stage.",
+            style="white-space: pre-line; font-size: 16px; margin-bottom: 10px;"
+        ),
         search_box,
         date_range_options,
         table,
@@ -2308,6 +2367,7 @@ def stage7(page: int = 1, sort_by: str = "date_stage_update", order: str = "asc"
             A("Duplicates", href="/duplicate", role="button", style="margin-left: 10px; white-space: nowrap ; height:50px; font-weight: 700;"),
             A("Not Approved", href="/notapproved", role="button", style="margin-left: 10px; white-space: nowrap ; height:50px; font-weight: 700;"),
             A("Not Available", href="/stage11", role="button", style="margin-left: 10px; white-space: nowrap ; height:50px; font-weight: 700;"),
+            A("Books not found", href="/stage12", role="button", style="margin-left: 10px; white-space: nowrap ; height:50px; font-weight: 700;"),
             A("Download All", href="/downloadentire", role="button", style="margin-left: 10px; white-space: nowrap ; height:50px; font-weight: 700;"),
             A("Download books here", href="/downloadstage7", role="button", style="margin-left: 10px; white-space: nowrap ; height:50px; font-weight: 700;"),
             global_search_box,
@@ -2513,7 +2573,12 @@ def stage8(page: int = 1, sort_by: str = "date_stage_update", order: str = "asc"
 
     card = Card(
         H3("Books  Ordered"),
-        # H6("This displays the details for Stage 3, including editable fields like cost, currency, and remarks."),
+        Div(
+            "Here it will display the books that are in circulation. "
+            "All the details from the previous stage will display here. "
+            "If any additional remarks need to be added, they can be added here.",
+            style="white-space: pre-line; font-size: 16px; margin-bottom: 10px;"
+        ),
         search_box,
         date_range_options,
         table,
@@ -2529,6 +2594,7 @@ def stage8(page: int = 1, sort_by: str = "date_stage_update", order: str = "asc"
             A("Duplicates", href="/duplicate", role="button", style="margin-left: 10px; white-space: nowrap ; height:50px; font-weight: 700;"),
             A("Not Approved", href="/notapproved", role="button", style="margin-left: 10px; white-space: nowrap ; height:50px; font-weight: 700;"),
             A("Not Available", href="/stage11", role="button", style="margin-left: 10px; white-space: nowrap ; height:50px; font-weight: 700;"),
+            A("Books not found", href="/stage12", role="button", style="margin-left: 10px; white-space: nowrap ; height:50px; font-weight: 700;"),
             A("Download All", href="/downloadentire", role="button", style="margin-left: 10px; white-space: nowrap ; height:50px; font-weight: 700;"),
             A("Download books here", href="/downloadstage8", role="button", style="margin-left: 10px; white-space: nowrap ; height:50px; font-weight: 700;"),
             global_search_box,
@@ -2742,6 +2808,12 @@ def globalsearch(page: int = 1, sort_by: str = "date", order: str = "desc", sear
 
     card = Card(
         H3("Search"),
+        Div(
+            "Here it displays the details about the stage the requested book is currently in, which is searched globally. "
+            "If a search is done by the recommender name or email, it will fetch all the book details requested by the person. "
+            "To get more details about a particular book, the above buttons can be used to navigate to that stage, and the search will show the remaining details.",
+            style="white-space: pre-line; font-size: 16px; margin-bottom: 10px;"
+        ),
         table,    
         header=Div(
             A("Initiated", href="/", role="button", style="margin-left: 10px; white-space: nowrap ; height:50px; font-weight: 700;"),
@@ -2755,6 +2827,7 @@ def globalsearch(page: int = 1, sort_by: str = "date", order: str = "desc", sear
             A("Duplicates", href="/duplicate", role="button", style="margin-left: 10px; white-space: nowrap ; height:50px; font-weight: 700;"),
             A("Not Approved", href="/notapproved", role="button", style="margin-left: 10px; white-space: nowrap ; height:50px; font-weight: 700;"),
             A("Not Available", href="/stage11", role="button", style="margin-left: 10px; white-space: nowrap ; height:50px; font-weight: 700;"),
+            A("Books not found", href="/stage12", role="button", style="margin-left: 10px; white-space: nowrap ; height:50px; font-weight: 700;"),
             A("Download details here", href=f"/downloadsearch/{search}", role="button", style="margin-left: 10px; white-space: nowrap ; height:50px; font-weight: 700;"),
             style="display: flex; align-items: center; justify-content: flex-start; padding: 20px; height: 50px; font-weight: 700;"
         ),
@@ -2917,13 +2990,19 @@ def stage12(page: int = 1, sort_by: str = "date", order: str = "desc", search: s
 
     # Card for displaying the book list in stage 2
     card = Card(
-        H3("ISBN not found"),  
+        H3("ISBN not found"),
+        Div(
+            "Here it displays the details that the requested book ISBN that was entered is not correct, and no book was found with the given ISBN. "
+            "If it is moved to this stage by mistake, it can be retrieved to the previous stage by moving to the previous stage.",
+            style="white-space: pre-line; font-size: 16px; margin-bottom: 10px;"
+        ), 
         search_box,
         date_range_options,
         table,  # Display the table
         pagination_controls,  # Add pagination controls
         header=Div(
             A("Initiated", href="/", role="button", style="margin-left: 10px; white-space: nowrap ; height:50px; font-weight: 700;"),
+            A("Processing", href="/stage2", role="button", style="margin-left: 10px; white-space: nowrap ; height:50px; font-weight: 700;"),
             A("Approval Pending", href="/stage3", role="button", style="margin-left: 10px; white-space: nowrap ; height:50px; font-weight: 700;"),
             A("Approved", href="/stage4", role="button", style="margin-left: 10px; white-space: nowrap ; height:50px; font-weight: 700;"),
             A("Under enquiry", href="/stage5", role="button", style="margin-left: 10px; white-space: nowrap ; height:50px; font-weight: 700;"),

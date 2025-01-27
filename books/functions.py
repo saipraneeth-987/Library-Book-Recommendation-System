@@ -89,9 +89,8 @@ def update_stage(id: int, current_stage: int,new_stage: int):
 
 def get_book_details(isbn):
     if (isbn):
-        api_key = "AIzaSyBVqOwuDKlY35_CSFSuhWzcAP4MIGnqLLU"
         url = f"https://www.googleapis.com/books/v1/volumes?q=isbn:{
-            isbn}&key={api_key}"
+            isbn}"
         response = requests.get(url)
         url_openlib = f"https://openlibrary.org/api/books?bibkeys=ISBN:{
             isbn}&format=json&jscmd=data"

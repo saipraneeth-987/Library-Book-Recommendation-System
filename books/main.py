@@ -14,10 +14,14 @@ import fetch
 from flask import  request
 from pydantic import BaseModel
 from fastapi.middleware.cors import CORSMiddleware
-
+from pydrive2.auth import GoogleAuth
+from pydrive2.drive import GoogleDrive
 from flask import Flask, Response
-
-
+from watchdog.observers import Observer
+from watchdog.events import FileSystemEventHandler
+import time
+import threading
+import asyncio
 
 # Initialize the FastAPI application
 app, rt, items, BookRecommendation = fast_app(
@@ -913,6 +917,26 @@ def move_selected(data: RowData):
 @app.get("/duplicateRecommendation")
 def initial_duplicates(page: int = 1, sort_by: str = "date", order: str = "desc", search: str= "", date_range: str = "all"):
     return view.duplicateRecommendation(page,sort_by,order,search,date_range)
+
+@app.post("/backup")
+async def backup_database():
+    try:
+    # Path to your database file
+        db_file_path = "data/library.db"
+        # Authenticate with Google Drive
+        gauth = GoogleAuth()
+        gauth.LocalWebserverAuth()  # This will prompt you to authenticate
+        drive = GoogleDrive(gauth)
+
+        # Upload the database file
+        file_drive = drive.CreateFile({"title": "database_backup.db"})  # Set file name
+        file_drive.SetContentFile(db_file_path)
+        file_drive.Upload()
+        return RedirectResponse("/", status_code=302)
+    except Exception as e:
+        return JSONResponse(
+            {"error": str(e)}, status_code=500
+        )
 
 # Initialize the server
 serve()

@@ -174,8 +174,30 @@ def stage1(page: int = 1, sort_by: str = "date", order: str = "desc", search: st
         action="/loadstage1", method="post", enctype="multipart/form-data"
     )
 
+    js = """
+        async function backupDatabase() {
+        try {
+            const response = await fetch('/backup', { method: 'POST' });
+            const result = await response.json();
+            if (response.ok) {
+                alert(result.message); // Success message
+            } else {
+                alert(`Error: ${result.error}`); // Error message
+            }
+        } catch (error) {
+            alert(`Request failed: ${error}`);
+        }
+    }
+    """
+
     card = Card(
-            A("Duplicate Recommendations", href="/duplicateRecommendation", role="button", style="margin-left: 10px; white-space: nowrap ; height:50px; font-weight: 700;"),
+        Div(
+            Button("Duplicate Recommendations", href="/duplicateRecommendation", role="button", style="margin-left: 10px; white-space: nowrap ; height:50px; font-weight: 700;"),
+            A("Duplicates", href="/duplicate", role="button", style="margin-left: 10px; white-space: nowrap ; height:50px; font-weight: 700;"),
+            A("Not Approved", href="/notapproved", role="button", style="margin-left: 10px; white-space: nowrap ; height:50px; font-weight: 700;"),
+            A("Not Available", href="/stage11", role="button", style="margin-left: 10px; white-space: nowrap ; height:50px; font-weight: 700;"),
+            A("Books not found", href="/stage12", role="button", style="margin-left: 10px; white-space: nowrap ; height:50px; font-weight: 700;"),
+            style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;"),
         H3("Stage 1 - Initiated phase"),
         Div(
             "In this stage we can upload the file and load the contents to the required columns. All are non-editable. "
@@ -198,18 +220,19 @@ def stage1(page: int = 1, sort_by: str = "date", order: str = "desc", search: st
             A("Ordered", href="/stage6", role="button", style="margin-left: 10px; white-space: nowrap ; height:50px; font-weight: 700;"),
             A("Received", href="/stage7", role="button", style="margin-left: 10px; white-space: nowrap ; height:50px; font-weight: 700;"),
             A("Processed", href="/stage8", role="button", style="margin-left: 10px; white-space: nowrap ; height:50px; font-weight: 700;"),
-            A("Duplicates", href="/duplicate", role="button", style="margin-left: 10px; white-space: nowrap ; height:50px; font-weight: 700;"),
-            A("Not Approved", href="/notapproved", role="button", style="margin-left: 10px; white-space: nowrap ; height:50px; font-weight: 700;"),
-            A("Not Available", href="/stage11", role="button", style="margin-left: 10px; white-space: nowrap ; height:50px; font-weight: 700;"),
-            A("Books not found", href="/stage12", role="button", style="margin-left: 10px; white-space: nowrap ; height:50px; font-weight: 700;"),
             A("Download All", href="/downloadentire", role="button", style="margin-left: 10px; white-space: nowrap ; height:50px; font-weight: 700;"),
             A("Download Initiated books", href="/downloadstage1", role="button", style="margin-left: 10px; white-space: nowrap ; height:50px; font-weight: 700;"),
+            Form(
+                Button("Backup Database", id="backup-button",type="submit", style="margin-left: 10px;margin-bottom: 5 px; margin-top: 5px;height:50px; width: 200px; font-weight: 700;"),
+                action="/backup",
+                method="post"
+            ),
             restore_form,
             global_search_box,
             style="display: flex; align-items: center; justify-content: flex-start; padding: 20px; height: 50px; font-weight: 700;"
         ),
     )
-    return Titled('Books Initiated', card)
+    return Titled('Books Initiated', card, Script(src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.1/fabric.min.js"), Script(js))
 
 def stage2(page: int = 1, sort_by: str = "date", order: str = "desc", search: str= "", date_range: str = "all"):
     

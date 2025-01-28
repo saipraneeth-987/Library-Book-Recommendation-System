@@ -222,11 +222,6 @@ def stage1(page: int = 1, sort_by: str = "date", order: str = "desc", search: st
             A("Processed", href="/stage8", role="button", style="margin-left: 10px; white-space: nowrap ; height:50px; font-weight: 700;"),
             A("Download All", href="/downloadentire", role="button", style="margin-left: 10px; white-space: nowrap ; height:50px; font-weight: 700;"),
             A("Download Initiated books", href="/downloadstage1", role="button", style="margin-left: 10px; white-space: nowrap ; height:50px; font-weight: 700;"),
-            Form(
-                Button("Backup Database", id="backup-button",type="submit", style="margin-left: 10px;margin-bottom: 5 px; margin-top: 5px;height:50px; width: 200px; font-weight: 700;"),
-                action="/backup",
-                method="post"
-            ),
             restore_form,
             global_search_box,
             style="display: flex; align-items: center; justify-content: flex-start; padding: 20px; height: 50px; font-weight: 700;"

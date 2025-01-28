@@ -62,6 +62,10 @@ app, rt, items, BookRecommendation = fast_app(
     pk='id',  # Primary key field (id will be automatically generated)
 )
 
+
+drive = None
+db_file_path = "data/library.db"
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -70,12 +74,81 @@ app.add_middleware(
     allow_headers=["*"],  # Allow all headers
 )
 
+
 class RowData(BaseModel):
     mixedRow: list[str]
+
+
+def authenticate_drive():
+    global drive
+    gauth = GoogleAuth()
+    gauth.LocalWebserverAuth()
+    drive = GoogleDrive(gauth)
+
+
+def upload_to_drive(file_path):
+    try:
+        global drive
+        with sqlite3.connect(file_path) as conn:
+           conn.execute("PRAGMA wal_checkpoint(FULL);")
+           print(f"Checkpointed the WAL file for '{file_path}'.")
+
+        file_list = drive.ListFile({'q': "title = 'database_backup.db' and trashed=false"}).GetList()
+        if file_list:
+            file_drive = file_list[0]  # Assume the first match is the correct file
+            file_drive.SetContentFile(file_path)
+            file_drive.Upload()
+            print(f"Database file '{file_path}' successfully updated on Google Drive.")
+        else:
+            file_drive = drive.CreateFile({"title": "database_backup.db"})
+            file_drive.SetContentFile(file_path)
+            file_drive.Upload()
+            print(f"Database file '{file_path}' successfully uploaded to Google Drive.")
+    except Exception as e:
+        print(f"Error uploading file to Google Drive: {e}")
+
+
+class DBChangeHandler(FileSystemEventHandler):
+    """Event handler for database file changes."""
+
+    def on_modified(self, event):
+        if event.is_directory:
+            return
+        event_path = os.path.abspath(event.src_path)
+        db_path = os.path.abspath(db_file_path)
+        wal_path = db_path + "-wal"
+        print(f"Event detected: {event.src_path}")
+        if event_path == wal_path:
+            print(f"Detected change in '{db_file_path}'.")
+            time.sleep(2)  # Wait for 5 seconds before uploading
+            if os.path.exists(db_file_path):
+                upload_to_drive(db_file_path)
+
+
+def monitor_database():
+    """Monitor the database for changes."""
+    event_handler = DBChangeHandler()
+    observer = Observer()
+    observer.schedule(event_handler, path="data", recursive=False)
+    observer.start()
+    print("Started monitoring database changes.")
+    try:
+        observer.join()  # Keep the observer running
+    except KeyboardInterrupt:
+        observer.stop()
+
+
+@app.on_event("startup")
+async def startup_event():
+    """Run this when the FastAPI app starts."""
+    threading.Thread(target=authenticate_drive).start()
+    threading.Thread(target=monitor_database, daemon=True).start()
+
 
 @app.get("/api/get-book-details")
 async def get_book_details_api(isbn: str ):
     return functions.get_book_details(isbn)
+
 
 @app.get("/api/fetch-gmail-name")
 async def fetch_gmail_name_api(email: str):
@@ -87,19 +160,22 @@ async def fetch_gmail_name_api(email: str):
 def home(page: int = 1, sort_by: str = "date", order: str = "desc",search: str = "", date_range: str = "all"):
     return view.stage1(page, sort_by, order,search, date_range)
 
-# Function to move the item to stage 2
+
 @app.get("/move_to_stage2_from_stage1/{id}")
 def move_to_stage2(id: int):
     functions.update_stage(id,1,2)
     return RedirectResponse("/stage2", status_code=302)
 
+
 @app.get("/downloadentire")
 def download_csv():
     return download.download_whole()
 
+
 @app.get("/downloadstage1")
 def download_csv():
     return download.download_stage1()
+
 
 @app.post("/loadstage1")
 async def restore_data(backup_file: UploadFile):
@@ -111,14 +187,15 @@ async def restore_data(backup_file: UploadFile):
 def stage2(page: int = 1, sort_by: str = "date", order: str = "desc", search: str= "", date_range: str = "all"):
     return view.stage2(page,sort_by,order,search,date_range)
 
+
 @app.get("/downloadstage2")
 def download_csv():
     return download.download_stage2()
 
+
 @app.get("/move_to_stage1_from_stage2/{id}")
 def move_to_stage1_from_stage2(id: int):
     functions.update_stage(id,2,1)
-    
     return RedirectResponse("/", status_code=302)
 
 
@@ -133,15 +210,12 @@ def move_to_stage3_from_stage2(id: int):
         FROM items
         WHERE id = ? AND current_stage = 2
     """, (id,))
-    
     result = cursor.fetchone()
     connection.close()
-    
     if result:
         # Check for missing mandatory fields
         missing_fields = []
         recommender,number_of_copies, book_name, publisher, edition_or_year, authors, currency, cost_currency,availability_stage2 = result
-        
         if not recommender:
             missing_fields.append("Recommender")
         if not number_of_copies:
@@ -164,8 +238,6 @@ def move_to_stage3_from_stage2(id: int):
         # If there are missing fields, return an error message
         if missing_fields:
             return {"error": f"The following fields are mandatory and must be filled: {', '.join(missing_fields)}"}
-        
-        # If all mandatory fields are filled, proceed to move to stage 3
         if availability_stage2 == "No":
             functions.update_stage(id, 2, 3)
             return RedirectResponse("/stage3", status_code=302)
@@ -175,19 +247,14 @@ def move_to_stage3_from_stage2(id: int):
         if availability_stage2 == "No Book found":
             functions.update_stage(id, 2, 9)
             return RedirectResponse("/duplicate", status_code=302)
-        
-    
     return {"error": "No book found with the given ISBN in stage 2."}
+
 
 @app.get("/edit-book/{id}")
 async def edit_book(id: int):
     # Get the form and the JavaScript code
     res, js = await view.edit_in_stage2(id)
-    
-    # Retrieve the book details to fill the form (assuming `items` contains your data)
     frm = fill_form(res, items[id])
-    
-    # Ensure the script for fetching book details and Gmail name is included
     return Titled(
         'Edit Book Recommendation',
         frm,
@@ -917,26 +984,6 @@ def move_selected(data: RowData):
 @app.get("/duplicateRecommendation")
 def initial_duplicates(page: int = 1, sort_by: str = "date", order: str = "desc", search: str= "", date_range: str = "all"):
     return view.duplicateRecommendation(page,sort_by,order,search,date_range)
-
-@app.post("/backup")
-async def backup_database():
-    try:
-    # Path to your database file
-        db_file_path = "data/library.db"
-        # Authenticate with Google Drive
-        gauth = GoogleAuth()
-        gauth.LocalWebserverAuth()  # This will prompt you to authenticate
-        drive = GoogleDrive(gauth)
-
-        # Upload the database file
-        file_drive = drive.CreateFile({"title": "database_backup.db"})  # Set file name
-        file_drive.SetContentFile(db_file_path)
-        file_drive.Upload()
-        return RedirectResponse("/", status_code=302)
-    except Exception as e:
-        return JSONResponse(
-            {"error": str(e)}, status_code=500
-        )
 
 # Initialize the server
 serve()

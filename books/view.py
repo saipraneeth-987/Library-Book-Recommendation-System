@@ -173,23 +173,6 @@ def stage1(page: int = 1, sort_by: str = "date", order: str = "desc", search: st
         ),
         action="/loadstage1", method="post", enctype="multipart/form-data"
     )
-
-    js = """
-        async function backupDatabase() {
-        try {
-            const response = await fetch('/backup', { method: 'POST' });
-            const result = await response.json();
-            if (response.ok) {
-                alert(result.message); // Success message
-            } else {
-                alert(`Error: ${result.error}`); // Error message
-            }
-        } catch (error) {
-            alert(`Request failed: ${error}`);
-        }
-    }
-    """
-
     card = Card(
         Div(
             Button("Duplicate Recommendations", href="/duplicateRecommendation", role="button", style="margin-left: 10px; white-space: nowrap ; height:50px; font-weight: 700;"),
@@ -227,10 +210,10 @@ def stage1(page: int = 1, sort_by: str = "date", order: str = "desc", search: st
             style="display: flex; align-items: center; justify-content: flex-start; padding: 20px; height: 50px; font-weight: 700;"
         ),
     )
-    return Titled('Books Initiated', card, Script(src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.1/fabric.min.js"), Script(js))
+    return Titled('Books Initiated', card)
 
-def stage2(page: int = 1, sort_by: str = "date", order: str = "desc", search: str= "", date_range: str = "all"):
-    
+
+def stage2(page: int = 1, sort_by: str = "date", order: str = "desc", search: str= "", date_range: str = "all"):   
     all_items = fetch.stage2()
     all_items = functions.filter_by_date2(all_items, date_range)
     if search:
@@ -2807,6 +2790,16 @@ def clubbed(c_id):
     return (card,Script(src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.1/fabric.min.js"),Script(js))
 
 def globalsearch(page: int = 1, sort_by: str = "date", order: str = "desc", search: str = search1, date_range: str = "all", items_per_page: int = 10):
+    global_search_box = Form(
+        Group(
+            Input(type="text", name="search1", value=search1, placeholder="Search...",
+                  style="margin-right: 10px; padding: 5px;", required=True),
+            Input(type="hidden", name="date_range", value=date_range),
+            Button("Search", type="submit", style="font-weight: 600;"),
+            style="display: flex; align-items: center;"
+        ),
+        action="/search", method="get"
+    )
     print(search)
     # Fetch items and apply filters
     all_items = fetch.searched_items(search)
@@ -2898,7 +2891,9 @@ def globalsearch(page: int = 1, sort_by: str = "date", order: str = "desc", sear
         8: "Processed",
         9: "Duplicate",
         10: "Not Approved",
-        11: "Not Available"
+        11: "Not Available",
+        12: "Books Not Found",
+        13: "Duplicate Reccomendation"
     }
     table = Table(
         Tr(
@@ -2929,14 +2924,14 @@ def globalsearch(page: int = 1, sort_by: str = "date", order: str = "desc", sear
 
 
     card = Card(
-        H3("Search"),
         Div(
             "Here it displays the details about the stage the requested book is currently in, which is searched globally. "
             "If a search is done by the recommender name or email, it will fetch all the book details requested by the person. "
             "To get more details about a particular book, the above buttons can be used to navigate to that stage, and the search will show the remaining details.",
             style="white-space: pre-line; font-size: 16px; margin-bottom: 10px;"
         ),
-        table,    
+        global_search_box,
+        table,
         header=Div(
             A("Initiated", href="/", role="button", style="margin-left: 10px; white-space: nowrap ; height:50px; font-weight: 700;"),
             A("Processing", href="/stage2", role="button", style="margin-left: 10px; white-space: nowrap ; height:50px; font-weight: 700;"),
@@ -2954,7 +2949,7 @@ def globalsearch(page: int = 1, sort_by: str = "date", order: str = "desc", sear
             style="display: flex; align-items: center; justify-content: flex-start; padding: 20px; height: 50px; font-weight: 700;"
         ),
     )
-    return Titled('Search Details', card)
+    return Titled('Global Search', card)
 
 
 def stage12(page: int = 1, sort_by: str = "date", order: str = "desc", search: str= "", date_range: str = "all"):
